@@ -1,0 +1,23 @@
+{
+  "name": "babel-dts-generator",
+  "version": "0.1.1",
+  "description": "Babel DTS generator",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YoloDev/babel-dts-generator.git"
+  },
+  "keywords": [
+    "aurelia",
+    "babel"
+  ],
+  "author": "Alxandr",
+  "license": "Apache 2",
+  "bugs": {
+    "url": "https://github.com/YoloDev/babel-dts-generator/issues"
+  },
+  "homepage": "https://github.com/YoloDev/babel-dts-generator"
+}
