@@ -20,5 +20,8 @@
   "bugs": {
     "url": "https://github.com/YoloDev/babel-dts-generator/issues"
   },
-  "homepage": "https://github.com/YoloDev/babel-dts-generator"
+  "homepage": "https://github.com/YoloDev/babel-dts-generator",
+  "devDependencies": {
+    "mimosa": "^2.3.32"
+  }
 }

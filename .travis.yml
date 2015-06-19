@@ -6,7 +6,7 @@ install:
 - npm install
 - npm install -g mimosa
 script:
-- mimosa build
+- node node_modules/mimosa/bin/mimosa build
 deploy:
   provider: npm
   email: alxandr@alxandr.me
