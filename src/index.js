@@ -244,7 +244,7 @@ let exportGenerators = {
     }
 
     str += '}';
-    console.log(str);
+    //console.log(str);
     return str;
   },
 
@@ -374,9 +374,11 @@ function generateArgs(args) {
 }
 
 function getArg(p) {
+  let name, typeAnnotation;
   switch (p.type) {
     case 'Identifier':
-      const {name, typeAnnotation} = p;
+      name = p.name;
+      typeAnnotation = p.typeAnnotation;
       let type = 'any';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
@@ -385,7 +387,8 @@ function getArg(p) {
       return `${name}: ${type}`;
 
     case 'AssignmentPattern':
-      const {left: {name, typeAnnotation}} = p;
+      name = p.left.name;
+      typeAnnotation = p.left.typeAnnotation;
       let type = 'any';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
@@ -394,7 +397,8 @@ function getArg(p) {
       return `${name}?: ${type}`;
 
     case 'RestElement':
-      const {argument: {name, typeAnnotation}} = p;
+      name = p.argument.name;
+      typeAnnotation = p.argument.typeAnnotation;
       let type = 'any[]';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);

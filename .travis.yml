@@ -4,7 +4,6 @@ node_js:
 - iojs
 install:
 - npm install
-- npm install -g mimosa
 script:
 - node node_modules/mimosa/bin/mimosa build
 deploy:
