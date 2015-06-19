@@ -374,12 +374,11 @@ function generateArgs(args) {
 }
 
 function getArg(p) {
-  let name, typeAnnotation;
+  let name, typeAnnotation, type = 'any';
   switch (p.type) {
     case 'Identifier':
       name = p.name;
       typeAnnotation = p.typeAnnotation;
-      let type = 'any';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
       }
@@ -389,7 +388,6 @@ function getArg(p) {
     case 'AssignmentPattern':
       name = p.left.name;
       typeAnnotation = p.left.typeAnnotation;
-      let type = 'any';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
       }
@@ -399,7 +397,7 @@ function getArg(p) {
     case 'RestElement':
       name = p.argument.name;
       typeAnnotation = p.argument.typeAnnotation;
-      let type = 'any[]';
+      type = 'any[]';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
       }
