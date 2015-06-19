@@ -1,0 +1,18 @@
+language: node_js
+node_js:
+- node
+- iojs
+install:
+- npm install
+- npm install -g mimosa
+script:
+- mimosa build
+deploy:
+  provider: npm
+  email: alxandr@alxandr.me
+  api_key:
+    secure: S21vyJFngcMIijP3ZaQ8OjmFGtDLzJx5NdljWaxw33Tb+fwjA0uDUlkb5WgEx0BcDtOWE2+l1jtn7x0HXKojZdzw6mIiWMz9gta5XR39vw1d+rHQ4ymX/JyBE+QZeHShzeqMW+0qS7Kql/u/jbYiYYLkZJeaJ4y0MKPZBXdJPEk=
+  on:
+    tags: true
+    repo: YoloDev/babel-dts-generator
+    node: node

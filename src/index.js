@@ -31,6 +31,7 @@ export default function(babel) {
         meta.moduleId = moduleId;
         meta.moduleExports = [];
         meta.moduleImports = [];
+        meta.interfaces = [];
         meta.skipStack = [];
         meta.outpath = join(typings, moduleId + '.d.ts');
       },
@@ -56,6 +57,10 @@ export default function(babel) {
 
     ImportDeclaration(node) {
       meta.moduleImports.push(node);
+    },
+
+    InterfaceDeclaration(node) {
+      meta.interfaces.push(node);
     }
   });
 
@@ -75,13 +80,20 @@ export default function(babel) {
 }
 
 function generate(data) {
-  const {moduleId, moduleExports, moduleImports} = data;
+  const {moduleId, moduleExports, moduleImports, interfaces} = data;
   let str = `declare module '${moduleId}' {\n`;
   for (let i of moduleImports) {
     let importStr = generateDts(i);
     if (importStr) {
       importStr = importStr.split('\n').map(s => `  ${s}`).join('\n');
       str += importStr + '\n';
+    }
+  }
+  for (let i of interfaces) {
+    let interfaceStr = generateDts(i);
+    if (interfaceStr) {
+      interfaceStr = interfaceStr.split('\n').map(s => `  ${s}`).join('\n');
+      str += interfaceStr + '\n';
     }
   }
   for (let e of moduleExports) {
@@ -188,11 +200,92 @@ let exportGenerators = {
         memberStr = memberStr.split('\n').map(s => `  ${s}`).join('\n');
         str += memberStr + '\n';
       } else {
-        console.log('missing member type: ', member.type);
+        console.warn('missing member type: ', member.type);
       }
     }
 
     return str + '}';
+  },
+
+  InterfaceDeclaration(node) {
+    const {id: {name}, body: {indexers, properties, callProperties}, extends: e} = node;
+    let extendsStr;
+    if (e.length) {
+      extendsStr = ' extends ' + e.map(({id: {name}}) => {
+        return name;
+      }).join(', ') + ' ';
+    } else {
+      extendsStr = '';
+    }
+    let str = `export interface ${name}${extendsStr} {\n`;
+
+    for (let property of properties) {
+      let memberStr = generateDts(property);
+      if (memberStr) {
+        memberStr = memberStr.split('\n').map(s => `  ${s}`).join('\n');
+        str += memberStr + '\n';
+      }
+    }
+
+    for (let indexer of indexers) {
+      let memberStr = generateDts(indexer);
+      if (memberStr) {
+        memberStr = memberStr.split('\n').map(s => `  ${s}`).join('\n');
+        str += memberStr + '\n';
+      }
+    }
+
+    for (let method of callProperties) {
+      let memberStr = generateDts(method);
+      if (memberStr) {
+        memberStr = memberStr.split('\n').map(s => `  ${s}`).join('\n');
+        str += memberStr + '\n';
+      }
+    }
+
+    str += '}';
+    console.log(str);
+    return str;
+  },
+
+  ObjectTypeIndexer(node) {
+    const {id: {name}, value, key} = node;
+    let type = 'any';
+    let keyType = 'any';
+
+    if (value) {
+      type = getTypeAnnotationString(value);
+    }
+
+    if (key) {
+      keyType = getTypeAnnotationString(key);
+    }
+
+    const staticStr = node.static ? 'static ' : '';
+    return `${staticStr}[${name}: ${keyType}]: ${type};`;
+  },
+
+  ObjectTypeProperty(node) {
+    const {key: {name}, value} = node;
+    const staticStr = node.static ? 'static ' : '';
+
+    if (value.type === 'FunctionTypeAnnotation') {
+      let returnType = 'any';
+      if (value.returnType) {
+        returnType = getTypeAnnotationString(value.returnType);
+      }
+
+      let params = value.params.map(getFunctionTypeAnnotationParameter).join(', ');
+      return `${staticStr}${name}(${params}): ${type};`;
+    }
+
+    let type = 'any';
+
+    if (value) {
+      type = getTypeAnnotationString(value);
+    }
+
+    return `${staticStr}${name}: ${type};`;
   },
 
   MethodDefinition(node) {
@@ -258,6 +351,8 @@ function generateDts(node) {
   let fn = exportGenerators[node.type];
   if (fn) {
     return fn (node);
+  } else {
+    console.warn(`${node.type} not supported`);
   }
 }
 
@@ -373,7 +468,7 @@ function getFunctionTypeAnnotationParameter(node) {
   if (optional) {
     name = `${name}?`;
   }
-  
+
   return `${name}: ${type}`;
 }
 
