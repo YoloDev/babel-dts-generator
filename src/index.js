@@ -80,8 +80,8 @@ export default function(babel) {
 }
 
 function generate(data) {
-  const {moduleId, moduleExports, moduleImports, interfaces} = data;
-  let str = `declare module '${moduleId}' {\n`;
+  const {moduleId, moduleExports, moduleImports, interfaces, root} = data;
+  let str = `declare module '${root}' {\n`;
   for (let i of moduleImports) {
     let importStr = generateDts(i);
     if (importStr) {
