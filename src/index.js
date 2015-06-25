@@ -268,6 +268,7 @@ let exportGenerators = {
   ObjectTypeProperty(node) {
     const {key: {name}, value} = node;
     const staticStr = node.static ? 'static ' : '';
+    const optionalStr = node.optional ? '?' : '';
 
     if (value.type === 'FunctionTypeAnnotation') {
       let returnType = 'any';
@@ -285,7 +286,7 @@ let exportGenerators = {
       type = getTypeAnnotationString(value);
     }
 
-    return `${staticStr}${name}: ${type};`;
+    return `${staticStr}${name}${optionalStr}: ${type};`;
   },
 
   MethodDefinition(node) {
