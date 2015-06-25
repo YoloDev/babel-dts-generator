@@ -25,7 +25,7 @@ export default function(babel) {
     Program: {
       enter(node, parent) {
         meta = {};
-        const {filename, moduleRoot, extra: {packageName, typings}} = this.state.opts;
+        const {filename, moduleRoot, extra: {packageName, typings, suppressModulePath = false}} = this.state.opts;
         const moduleId = packageName + '/' + relative(moduleRoot, filename).replace('.js', '');
         meta.root = packageName;
         meta.moduleId = moduleId;
@@ -34,6 +34,7 @@ export default function(babel) {
         meta.interfaces = [];
         meta.skipStack = [];
         meta.outpath = join(typings, moduleId + '.d.ts');
+        meta.suppressModulePath = suppressModulePath;
       },
 
       exit(node, parent) {
@@ -80,8 +81,13 @@ export default function(babel) {
 }
 
 function generate(data) {
-  const {moduleId, moduleExports, moduleImports, interfaces} = data;
-  let str = `declare module '${moduleId}' {\n`;
+  const {moduleId, moduleExports, moduleImports, interfaces, root, suppressModulePath} = data;
+  let str = '';
+  if (suppressModulePath) {
+    str = `declare module '${root}' {\n`;
+  } else {
+    str = `declare module '${moduleId}' {\n`;
+  }
   for (let i of moduleImports) {
     let importStr = generateDts(i);
     if (importStr) {
