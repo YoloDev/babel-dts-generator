@@ -25,7 +25,7 @@ export default function(babel) {
     Program: {
       enter(node, parent) {
         meta = {};
-        const {filename, moduleRoot, extra: {packageName, typings, suppressModulePath = false}} = this.state.opts;
+        const {filename, moduleRoot, extra: {packageName, typings, suppressModulePath = false, suppressComments = false}} = this.state.opts;
         const moduleId = packageName + '/' + relative(moduleRoot, filename).replace('.js', '');
         meta.root = packageName;
         meta.moduleId = moduleId;
@@ -35,6 +35,7 @@ export default function(babel) {
         meta.skipStack = [];
         meta.outpath = join(typings, moduleId + '.d.ts');
         meta.suppressModulePath = suppressModulePath;
+        meta.suppressComments = suppressComments;
       },
 
       exit(node, parent) {
@@ -115,14 +116,14 @@ function generate(data) {
 
 let exportGenerators = {
   ExportAllDeclaration(node) {
-    return `export * from '${getSource(node.source)}';`;
+    return `${generateComment(node.leadingComments)}export * from '${getSource(node.source)}';`;
   },
 
   ExportNamedDeclaration(node) {
     if (node.declaration) {
       const classString = generateDts(node.declaration);
       if (classString) {
-        return `export ${classString}`;
+        return `${generateComment(node.leadingComments)}export ${classString}`;
       } else {
         console.log(`Unsupported node type ${node.declaration.type}`);
       }
@@ -133,10 +134,10 @@ let exportGenerators = {
           if (!localName || localName === importName)
             return importName;
           else
-            return `${importName} as ${localName}`;
+            return `${generateComment(node.leadingComments)}${importName} as ${localName}`;
         }).join(', ');
 
-      return `export { ${objectExports} } from '${getSource(node.source)}';`
+      return `${generateComment(node.leadingComments)}export { ${objectExports} } from '${getSource(node.source)}';`
     }
   },
 
@@ -146,7 +147,7 @@ let exportGenerators = {
       console.log(`Can't generate ${node.declaration.type}.`);
     }
 
-    return `export default ${value};`;
+    return `${generateComment(node.leadingComments)}export default ${value};`;
   },
 
   ImportDeclaration(node) {
@@ -174,7 +175,7 @@ let exportGenerators = {
       parts.push(`{ ${objectImports} } `);
     }
 
-    return `import ${parts.join(', ')} from '${getSource(node.source)}';`;
+    return `${generateComment(node.leadingComments)}import ${parts.join(', ')} from '${getSource(node.source)}';`;
   },
 
   VariableDeclaration(node) {
@@ -189,12 +190,12 @@ let exportGenerators = {
       return `${name}: ${type}`;
     }).join(', ');
 
-    return `${kind} ${declarations};`;
+    return `${generateComment(node.leadingComments)}${kind} ${declarations};`;
   },
 
   ClassDeclaration(node) {
     const {id: {name}, superClass, body} = node;
-    let str = `class ${name} `;
+    let str = `${generateComment(node.leadingComments)}class ${name} `;
     if (superClass) {
       str += `extends ${superClass.name} `;
     }
@@ -223,7 +224,7 @@ let exportGenerators = {
     } else {
       extendsStr = '';
     }
-    let str = `export interface ${name}${extendsStr} {\n`;
+    let str = `${generateComment(node.leadingComments)}export interface ${name}${extendsStr} {\n`;
 
     for (let property of properties) {
       let memberStr = generateDts(property);
@@ -268,7 +269,7 @@ let exportGenerators = {
     }
 
     const staticStr = node.static ? 'static ' : '';
-    return `${staticStr}[${name}: ${keyType}]: ${type};`;
+    return `${generateComment(node.leadingComments)}${staticStr}[${name}: ${keyType}]: ${type};`;
   },
 
   ObjectTypeProperty(node) {
@@ -292,13 +293,13 @@ let exportGenerators = {
       type = getTypeAnnotationString(value);
     }
 
-    return `${staticStr}${name}${optionalStr}: ${type};`;
+    return `${generateComment(node.leadingComments)}${staticStr}${name}${optionalStr}: ${type};`;
   },
 
   MethodDefinition(node) {
     const args = getArgs(node.value).join(', ');
     if (node.kind === 'constructor') {
-      return `constructor(${args});`
+      return `${generateComment(node.leadingComments)}constructor(${args});`
     } else {
       const {key: {name}, value: {returnType}} = node;
       let type = 'any';
@@ -312,7 +313,7 @@ let exportGenerators = {
         prefix = 'static ';
       }
 
-      return `${prefix}${name}(${args}): ${type};`;
+      return `${generateComment(node.leadingComments)}${prefix}${name}(${args}): ${type};`;
     }
   },
 
@@ -329,12 +330,12 @@ let exportGenerators = {
       type = getTypeAnnotation(typeAnnotation);
     }
 
-    return `${prefix}${name}: ${type};`;
+    return `${generateComment(node.leadingComments)}${prefix}${name}: ${type};`;
   },
 
   NewExpression(node) {
     let args = generateArgs(node.arguments);
-    return `new ${node.callee.name}(${args})`;
+    return `${generateComment(node.leadingComments)}new ${node.callee.name}(${args})`;
   },
 
   FunctionDeclaration(node) {
@@ -346,13 +347,32 @@ let exportGenerators = {
       type = getTypeAnnotation(returnType);
     }
 
-    return `function ${name}(${args}): ${type};`;
+    return `${generateComment(node.leadingComments)}function ${name}(${args}): ${type};`;
   },
 
   Literal(node) {
     return node.raw;
   }
 };
+
+function generateComment(node) {
+  if (meta.suppressComments || !node) {
+    return '';
+  }
+
+  return '\n' + node.map(s => {
+    switch (s.type) {
+      case 'CommentLine': return '// ' + s.value;
+      break;
+
+      case 'CommentBlock': return '/*' + s.value + '*/'
+      break;
+
+      default:
+      return '';
+    }
+  }).join('\n') + '\n';
+}
 
 function generateDts(node) {
   let fn = exportGenerators[node.type];
