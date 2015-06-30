@@ -25,7 +25,7 @@ export default function(babel) {
     Program: {
       enter(node, parent) {
         meta = {};
-        const {filename, moduleRoot, extra: {packageName, typings, suppressModulePath = false, suppressComments = false}} = this.state.opts;
+        const {filename, moduleRoot, extra: {dts: {packageName, typings, suppressModulePath = false, suppressComments = false, ignoreMembers = /^_.*/}}} = this.state.opts;
         const moduleId = packageName + '/' + relative(moduleRoot, filename).replace('.js', '');
         meta.root = packageName;
         meta.moduleId = moduleId;
@@ -36,6 +36,7 @@ export default function(babel) {
         meta.outpath = join(typings, moduleId + '.d.ts');
         meta.suppressModulePath = suppressModulePath;
         meta.suppressComments = suppressComments;
+        meta.ignoreMembers = ignoreMembers;
       },
 
       exit(node, parent) {
@@ -125,7 +126,9 @@ let exportGenerators = {
       if (classString) {
         return `${generateComment(node.leadingComments)}export ${classString}`;
       } else {
-        console.log(`Unsupported node type ${node.declaration.type}`);
+        if (!shouldExcludeMember(node.declaration.id.name)) {
+          console.log(`Unsupported node type ${node.declaration.type} - id: ${node.declaration.id.name}`);
+        }
       }
     } else if (node.source != null) {
       const objectExports = node.specifiers.filter(s => s.type === 'ExportSpecifier')
@@ -207,7 +210,9 @@ let exportGenerators = {
         memberStr = memberStr.split('\n').map(s => `  ${s}`).join('\n');
         str += memberStr + '\n';
       } else {
-        console.warn('missing member type: ', member.type);
+        if (!shouldExcludeMember(member.key.name)) {
+          console.warn('missing member type: ', member.type, ' name: ', member.key.name);
+        }
       }
     }
 
@@ -277,6 +282,10 @@ let exportGenerators = {
     const staticStr = node.static ? 'static ' : '';
     const optionalStr = node.optional ? '?' : '';
 
+    if (shouldExcludeMember(name)) {
+      return '';
+    }
+
     if (value.type === 'FunctionTypeAnnotation') {
       let returnType = 'any';
       if (value.returnType) {
@@ -305,6 +314,10 @@ let exportGenerators = {
       let type = 'any';
       let prefix = '';
 
+      if (shouldExcludeMember(name)) {
+        return '';
+      }
+
       if (returnType) {
         type = getTypeAnnotation(returnType);
       }
@@ -321,6 +334,10 @@ let exportGenerators = {
     const {key: {name}, typeAnnotation} = node;
     let type = 'any';
     let prefix = '';
+
+    if (shouldExcludeMember(name)) {
+      return '';
+    }
 
     if (node.static) {
       prefix = 'static ';
@@ -342,6 +359,10 @@ let exportGenerators = {
     const {id: {name}, returnType} = node;
     const args = getArgs(node).join(', ');
     let type = 'any';
+
+    if (shouldExcludeMember(name)) {
+      return '';
+    }
 
     if (returnType) {
       type = getTypeAnnotation(returnType);
@@ -404,7 +425,11 @@ function getArg(p) {
   let name, typeAnnotation, type = 'any';
   switch (p.type) {
     case 'Identifier':
-      name = p.name;
+      if (p.optional) {
+        name = p.name + '?';
+      } else {
+        name = p.name;
+      }
       typeAnnotation = p.typeAnnotation;
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
@@ -491,6 +516,7 @@ function getTypeAnnotationString(annotation) {
 function getFunctionTypeAnnotationParameter(node) {
   let {name: {name}, typeAnnotation, optional} = node;
   let type = 'any';
+
   if (typeAnnotation) {
     type = getTypeAnnotationString(typeAnnotation);
   }
@@ -508,5 +534,38 @@ function ensureDir(p) {
     try {
       fs.mkdirSync(dn);
     } catch(e){}
+  }
+}
+
+function shouldExcludeMember(memberName) {
+  // memberObjectFilter falsy means include all members
+  if (!meta.ignoreMembers) {
+    return false;
+  }
+
+  let memberType = typeof meta.ignoreMembers;
+  if (memberType != 'function' && memberType != 'string') {
+    if (meta.ignoreMembers instanceof RegExp) {
+      memberType = 'regexp';
+    }
+  }
+
+  switch (memberType) {
+    case 'function':
+    // memberObjectFilter is function means call function passing memberName and exclude if truthy
+    return meta.ignoreMembers(memberName);
+
+    case 'regexp':
+    // memberObjectFilter is regex means check regex, exclude if match
+    return memberName.match(meta.ignoreMembers);
+
+    case 'string':
+    // memberObjectFilter is string means check create regex from string, exclude if match
+    return memberName.match(new RegExp(meta.ignoreMembers));
+
+    default:
+    console.log('warning: ignoreMembers ignored, expected type function, regexp, or string, but received type ' + memberType);
+    meta.ignoreMembers = null;
+    return false;
   }
 }
