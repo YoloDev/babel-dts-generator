@@ -25,7 +25,7 @@ export default function(babel) {
     Program: {
       enter(node, parent) {
         meta = {};
-        const {filename, moduleRoot, extra: {dts: {packageName, typings, suppressModulePath = false, suppressComments = false, memberOutputFilter = false}}} = this.state.opts;
+        const {filename, moduleRoot, extra: {dts: {packageName, typings, suppressModulePath = false, suppressComments = false, ignoreMembers = /^_.*/}}} = this.state.opts;
         const moduleId = packageName + '/' + relative(moduleRoot, filename).replace('.js', '');
         meta.root = packageName;
         meta.moduleId = moduleId;
@@ -36,7 +36,7 @@ export default function(babel) {
         meta.outpath = join(typings, moduleId + '.d.ts');
         meta.suppressModulePath = suppressModulePath;
         meta.suppressComments = suppressComments;
-        meta.memberOutputFilter = memberOutputFilter;
+        meta.ignoreMembers = ignoreMembers;
       },
 
       exit(node, parent) {
@@ -539,13 +539,13 @@ function ensureDir(p) {
 
 function shouldExcludeMember(memberName) {
   // memberObjectFilter falsy means include all members
-  if (!meta.memberOutputFilter) {
+  if (!meta.ignoreMembers) {
     return false;
   }
 
-  let memberType = typeof meta.memberOutputFilter;
+  let memberType = typeof meta.ignoreMembers;
   if (memberType != 'function' && memberType != 'string') {
-    if (meta.memberOutputFilter instanceof RegExp) {
+    if (meta.ignoreMembers instanceof RegExp) {
       memberType = 'regexp';
     }
   }
@@ -553,19 +553,19 @@ function shouldExcludeMember(memberName) {
   switch (memberType) {
     case 'function':
     // memberObjectFilter is function means call function passing memberName and exclude if truthy
-    return meta.memberOutputFilter(memberName);
+    return meta.ignoreMembers(memberName);
 
     case 'regexp':
     // memberObjectFilter is regex means check regex, exclude if match
-    return memberName.match(meta.memberOutputFilter);
+    return memberName.match(meta.ignoreMembers);
 
     case 'string':
     // memberObjectFilter is string means check create regex from string, exclude if match
-    return memberName.match(new RegExp(meta.memberOutputFilter));
+    return memberName.match(new RegExp(meta.ignoreMembers));
 
     default:
-    console.log('warning: memberOutputFilter ignored, expected type function, regexp, or string, but received type ' + memberType);
-    meta.memberOutputFilter = null;
+    console.log('warning: ignoreMembers ignored, expected type function, regexp, or string, but received type ' + memberType);
+    meta.ignoreMembers = null;
     return false;
   }
 }
