@@ -503,7 +503,7 @@ function getTypeAnnotationString(annotation) {
     case 'FunctionTypeAnnotation':
       const params = annotation.params.map(getFunctionTypeAnnotationParameter).join(', ');
       const returnType = getTypeAnnotationString(annotation.returnType);
-      return `(${params}) => ${returnType}`;
+      return `((${params}) => ${returnType})`;
 
     case 'ArrayTypeAnnotation':
       const elementType = getTypeAnnotationString(annotation.elementType);
