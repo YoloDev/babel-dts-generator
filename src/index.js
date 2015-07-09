@@ -124,7 +124,11 @@ let exportGenerators = {
     if (node.declaration) {
       const classString = generateDts(node.declaration);
       if (classString) {
-        return `${generateComment(node.leadingComments)}export ${classString}`;
+        if (classString === 'ignore') {
+          return '';
+        } else {
+          return `${generateComment(node.leadingComments)}export ${classString}`;
+        }
       } else {
         if (!shouldExcludeMember(node.declaration.id.name)) {
           console.log(`Unsupported node type ${node.declaration.type} - id: ${node.declaration.id.name}`);
@@ -183,8 +187,16 @@ let exportGenerators = {
 
   VariableDeclaration(node) {
     let kind = node.kind;
+    let hasDecl = false;
     let declarations = node.declarations.map(d => {
       const {id: {name}, typeAnnotation} = d;
+
+      if (shouldExcludeMember(name)) {
+        return '';
+      }
+
+      hasDecl = true;
+
       let type = 'any';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
@@ -193,11 +205,19 @@ let exportGenerators = {
       return `${name}: ${type}`;
     }).join(', ');
 
-    return `${generateComment(node.leadingComments)}${kind} ${declarations};`;
+    if (hasDecl) {
+      return `${generateComment(node.leadingComments)}${kind} ${declarations};`;
+    } else {
+      return 'ignore';
+    }
   },
 
   ClassDeclaration(node) {
     const {id: {name}, superClass, body} = node;
+    if (shouldExcludeMember(name)) {
+      return 'ignore';
+    }
+
     let str = `${generateComment(node.leadingComments)}class ${name} `;
     if (superClass) {
       str += `extends ${superClass.name} `;
