@@ -1,6 +1,6 @@
 {
   "name": "babel-dts-generator",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Babel DTS generator",
   "main": "lib/index.js",
   "scripts": {
