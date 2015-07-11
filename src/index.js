@@ -3,6 +3,7 @@ import { relative, basename, join, dirname } from 'path';
 import fs from 'fs';
 
 let meta = {};
+const IGNORED = {};
 
 export default function(babel) {
   const { Transformer, types: t } = babel;
@@ -124,7 +125,7 @@ let exportGenerators = {
     if (node.declaration) {
       const classString = generateDts(node.declaration);
       if (classString) {
-        if (classString === 'ignore') {
+        if (classString === IGNORED) {
           return '';
         } else {
           return `${generateComment(node.leadingComments)}export ${classString}`;
@@ -208,14 +209,14 @@ let exportGenerators = {
     if (hasDecl) {
       return `${generateComment(node.leadingComments)}${kind} ${declarations};`;
     } else {
-      return 'ignore';
+      return IGNORED;
     }
   },
 
   ClassDeclaration(node) {
     const {id: {name}, superClass, body} = node;
     if (shouldExcludeMember(name)) {
-      return 'ignore';
+      return IGNORED;
     }
 
     let str = `${generateComment(node.leadingComments)}class ${name} `;
