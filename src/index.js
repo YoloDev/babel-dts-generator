@@ -314,7 +314,7 @@ let exportGenerators = {
       }
 
       let params = value.params.map(getFunctionTypeAnnotationParameter).join(', ');
-      return `${staticStr}${name}(${params}): ${type};`;
+      return `${staticStr}${name}(${params}): ${returnType};`;
     }
 
     let type = 'any';
