@@ -183,7 +183,8 @@ let exportGenerators = {
       parts.push(`{ ${objectImports} } `);
     }
 
-    return `${generateComment(node.leadingComments)}import ${parts.join(', ')} from '${getSource(node.source)}';`;
+    let partsString = parts.length ? `${parts.join(', ')} from ` : '';
+    return `${generateComment(node.leadingComments)}import ${partsString}'${getSource(node.source)}';`;
   },
 
   VariableDeclaration(node) {
