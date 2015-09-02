@@ -191,7 +191,7 @@ let exportGenerators = {
     let kind = node.kind;
     let hasDecl = false;
     let declarations = node.declarations.map(d => {
-      const {id: {name}, typeAnnotation, type} = d;
+      const {id: {name, typeAnnotation}} = d;
 
       if (shouldExcludeMember(name)) {
         return '';
@@ -199,14 +199,12 @@ let exportGenerators = {
 
       hasDecl = true;
 
-      let typeResult = 'any';
+      let type = 'any';
       if (typeAnnotation) {
-        typeResult = getTypeAnnotation(typeAnnotation);
-      } else if (type) {
-        typeResult = type;
+        type = getTypeAnnotation(typeAnnotation);
       }
 
-      return `${name}: ${typeResult}`;
+      return `${name}: ${type}`;
     }).join(', ');
 
     if (hasDecl) {
