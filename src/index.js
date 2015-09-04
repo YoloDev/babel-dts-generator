@@ -348,8 +348,12 @@ let exportGenerators = {
         prefix = 'static ';
       }
 
-      if (node.kind === 'get' || node.kind === 'set') {
-        prefix += `${node.kind} `;
+      if (node.kind === 'set') {
+        return '';
+      }
+
+      if (node.kind === 'get') {
+        return `${generateComment(node.leadingComments)}${prefix}${name}: ${type};`;
       }
 
       return `${generateComment(node.leadingComments)}${prefix}${name}(${args}): ${type};`;
