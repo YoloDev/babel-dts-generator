@@ -340,12 +340,16 @@ let exportGenerators = {
         return '';
       }
 
-      if (returnType) {
+      if (returnType && returnType.typeAnnotation) {
         type = getTypeAnnotation(returnType);
       }
 
       if (node.static) {
         prefix = 'static ';
+      }
+
+      if (node.kind === 'get' || node.kind === 'set') {
+        prefix += `${node.kind} `;
       }
 
       return `${generateComment(node.leadingComments)}${prefix}${name}(${args}): ${type};`;
