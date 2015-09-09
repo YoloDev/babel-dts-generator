@@ -5,9 +5,7 @@ import fs from 'fs';
 let meta = {};
 const IGNORED = {};
 
-export default function(babel) {
-  const { Transformer, types: t } = babel;
-
+export default function({Plugin, types: t}) {
   const skipper = {
     enter(node) {
       if (!skip()) {
@@ -22,49 +20,51 @@ export default function(babel) {
     }
   };
 
-  return new Transformer('aurelia-babel-plugin', {
-    Program: {
-      enter(node, parent) {
-        meta = {};
-        const {filename, moduleRoot, extra: {dts: {packageName, typings, suppressModulePath = false, suppressComments = false, ignoreMembers = /^_.*/}}} = this.state.opts;
-        const moduleId = packageName + '/' + relative(moduleRoot, filename).replace('.js', '');
-        meta.root = packageName;
-        meta.moduleId = moduleId;
-        meta.moduleExports = [];
-        meta.moduleImports = [];
-        meta.interfaces = [];
-        meta.skipStack = [];
-        meta.outpath = join(typings, moduleId + '.d.ts');
-        meta.suppressModulePath = suppressModulePath;
-        meta.suppressComments = suppressComments;
-        meta.ignoreMembers = ignoreMembers;
+  return new Plugin('aurelia-babel-plugin', {
+    visitor: {
+      Program: {
+        enter(node, parent) {
+          meta = {};
+          const {filename, moduleRoot, extra: {dts: {packageName, typings, suppressModulePath = false, suppressComments = false, ignoreMembers = /^_.*/}}} = this.state.opts;
+          const moduleId = packageName + '/' + relative(moduleRoot, filename).replace('.js', '');
+          meta.root = packageName;
+          meta.moduleId = moduleId;
+          meta.moduleExports = [];
+          meta.moduleImports = [];
+          meta.interfaces = [];
+          meta.skipStack = [];
+          meta.outpath = join(typings, moduleId + '.d.ts');
+          meta.suppressModulePath = suppressModulePath;
+          meta.suppressComments = suppressComments;
+          meta.ignoreMembers = ignoreMembers;
+        },
+
+        exit(node, parent) {
+          const code = generate(meta);
+          //console.log(code);
+          ensureDir(meta.outpath);
+          fs.writeFileSync(meta.outpath, code);
+          meta = {};
+        }
       },
 
-      exit(node, parent) {
-        const code = generate(meta);
-        //console.log(code);
-        ensureDir(meta.outpath);
-        fs.writeFileSync(meta.outpath, code);
-        meta = {};
+      ExportAllDeclaration(node) {
+        meta.moduleExports.push(node);
+      },
+
+      ExportNamedDeclaration: skipper,
+
+      ExportDefaultDeclaration: skipper,
+
+      ClassDeclaration: skipper,
+
+      ImportDeclaration(node) {
+        meta.moduleImports.push(node);
+      },
+
+      InterfaceDeclaration(node) {
+        meta.interfaces.push(node);
       }
-    },
-
-    ExportAllDeclaration(node) {
-      meta.moduleExports.push(node);
-    },
-
-    ExportNamedDeclaration: skipper,
-
-    ExportDefaultDeclaration: skipper,
-
-    ClassDeclaration: skipper,
-
-    ImportDeclaration(node) {
-      meta.moduleImports.push(node);
-    },
-
-    InterfaceDeclaration(node) {
-      meta.interfaces.push(node);
     }
   });
 

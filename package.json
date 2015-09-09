@@ -4,8 +4,8 @@
   "description": "Babel DTS generator",
   "main": "lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "mimosa build"
+    "test": "node node_modules/mimosa/bin/mimosa build & node lib/test.js",
+    "prepublish": "node node_modules/mimosa/bin/mimosa build"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,12 @@
   },
   "homepage": "https://github.com/YoloDev/babel-dts-generator",
   "devDependencies": {
+    "babel-core": "^5.8.23",
+    "diff": "^2.1.0",
+    "glob-promise": "^1.0.3",
     "mimosa": "^2.3.32"
+  },
+  "dependencies": {
+    "cli-color": "^1.0.0"
   }
 }
