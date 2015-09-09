@@ -25,9 +25,7 @@
     "babel-core": "^5.8.23",
     "diff": "^2.1.0",
     "glob-promise": "^1.0.3",
-    "mimosa": "^2.3.32"
-  },
-  "dependencies": {
+    "mimosa": "^2.3.32",
     "cli-color": "^1.0.0"
   }
 }
