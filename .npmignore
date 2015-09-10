@@ -3,3 +3,5 @@ src/
 .DS_Store
 node_modules
 mimosa-config.js
+spec/
+lib/test.js
