@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "scripts": {
     "test": "node node_modules/mimosa/bin/mimosa build & node lib/test.js",
-    "prepublish": "node node_modules/mimosa/bin/mimosa build"
+    "prepublish": "node node_modules/mimosa/bin/mimosa build",
+    "debug": "node node_modules/mimosa/bin/mimosa build && node-debug lib/test.js"
   },
   "repository": {
     "type": "git",

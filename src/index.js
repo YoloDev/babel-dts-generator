@@ -332,9 +332,17 @@ let exportGenerators = {
     if (node.kind === 'constructor') {
       return `${generateComment(node.leadingComments)}constructor(${args});`
     } else {
-      const {key: {name}, value: {returnType}} = node;
+      const {key, computed, value: {returnType}} = node;
       let type = 'any';
       let prefix = '';
+      let name, nameStr;
+      if (key.type === 'Identifier') {
+        name = key.name;
+        nameStr = computed ? `[${name}]` : name;
+      } else if (key.type === 'Literal') {
+        name = key.value;
+        nameStr = `[${key.raw}]`;
+      }
 
       if (shouldExcludeMember(name)) {
         return '';
@@ -353,10 +361,10 @@ let exportGenerators = {
       }
 
       if (node.kind === 'get') {
-        return `${generateComment(node.leadingComments)}${prefix}${name}: ${type};`;
+        return `${generateComment(node.leadingComments)}${prefix}${nameStr}: ${type};`;
       }
 
-      return `${generateComment(node.leadingComments)}${prefix}${name}(${args}): ${type};`;
+      return `${generateComment(node.leadingComments)}${prefix}${nameStr}(${args}): ${type};`;
     }
   },
 
