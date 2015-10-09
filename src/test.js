@@ -109,6 +109,6 @@ function run(files, index, errors) {
   });
 }
 
-glob('spec/*.src.js').then(files => {
+glob('spec/**/*.src.js').then(files => {
   return run(files, 0, 0);
 }).catch(e => console.error(e));

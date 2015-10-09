@@ -3,7 +3,7 @@ logs
 *.log
 
 # Test output
-spec/*.d.ts
+spec/**/*.d.ts
 
 # Runtime data
 pids
