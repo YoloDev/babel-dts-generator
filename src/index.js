@@ -341,7 +341,7 @@ let exportGenerators = {
         nameStr = computed ? `[${name}]` : name;
       } else if (key.type === 'Literal') {
         name = key.value;
-        nameStr = `[${key.raw}]`;
+        nameStr = key.raw;
       }
 
       if (shouldExcludeMember(name)) {
