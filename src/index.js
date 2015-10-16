@@ -315,7 +315,7 @@ let exportGenerators = {
       }
 
       let params = value.params.map(getFunctionTypeAnnotationParameter).join(', ');
-      let restparam = getFunctionTypeAnnotationParameter(value.rest);
+      let restparam = value.rest ? getFunctionTypeAnnotationParameter(value.rest) : null;
       if (restparam) {
         restparam = `${params ? ', ' : ''}...${restparam}`;
       }
