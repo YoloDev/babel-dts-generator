@@ -1,3 +1,3 @@
 export interface IFoo {
-		foo(...baz: number[]): void;
+  foo(...baz: number[]): void;
 }

@@ -1,3 +1,3 @@
 export class Foo {
-		foo(...baz: number[]): any;
+  foo(...baz: number[]): any;
 }
