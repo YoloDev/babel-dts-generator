@@ -315,7 +315,12 @@ let exportGenerators = {
       }
 
       let params = value.params.map(getFunctionTypeAnnotationParameter).join(', ');
-      return `${staticStr}${name}(${params}): ${returnType};`;
+      let restparam = value.rest ? getFunctionTypeAnnotationParameter(value.rest) : null;
+      if (restparam) {
+        restparam = `${params ? ', ' : ''}...${restparam}`;
+      }
+
+      return `${staticStr}${name}(${params}${restparam}): ${returnType};`;
     }
 
     let type = 'any';
@@ -486,7 +491,7 @@ function getArg(p) {
 
     case 'RestElement':
       name = p.argument.name;
-      typeAnnotation = p.argument.typeAnnotation;
+      typeAnnotation = p.typeAnnotation;
       type = 'any[]';
       if (typeAnnotation) {
         type = getTypeAnnotation(typeAnnotation);
