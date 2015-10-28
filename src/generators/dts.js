@@ -6,11 +6,16 @@ import {
   createExportSpecifier,
   createExport,
   createParam,
-  createFunction } from './ast';
+  createFunction,
+  createInterface,
+  createInterfaceMethod,
+  createInterfaceProperty } from './ast';
 import { id } from './utils';
 
 const ROOT = 'root';
 const FUNCTION = 'func';
+const INTERFACE = 'iface';
+const CLASS = 'class';
 
 const generators = {
   ExportAllDeclaration(node, { root }) {
@@ -144,6 +149,68 @@ const generators = {
     const type = getTypeAnnotation(typeAnnotation, 'any[]');
 
     return createParam(name, type, true).fromSource(node);
+  },
+
+  InterfaceDeclaration(node, ctx) {
+    const { ignoreEmptyInterfaces } = ctx;
+    const { id: { name }, body: { indexers, properties, callProperties }, extends: e } = node;
+    const baseInterfaces = e.map(({ id: { name } }) => name);
+    const members = [];
+
+    const generate = generateNode({ ...ctx, state: INTERFACE });
+
+    for (const property of properties) {
+      const member = generate(property);
+      if (member !== null) {
+        members.push(member);
+      }
+    }
+
+    for (const indexer of indexers) {
+      const member = generate(indexer);
+      if (member !== null) {
+        members.push(member);
+      }
+    }
+
+    for (const method of callProperties) {
+      const member = generate(method);
+      if (method !== null) {
+        members.push(member);
+      }
+    }
+
+    if (ignoreEmptyInterfaces && baseInterfaces.length === 0 && members.length === 0) {
+      return null;
+    }
+
+    return createInterface(name, members, baseInterfaces).fromSource(node);
+  },
+
+  ObjectTypeProperty(node, ctx) {
+    const { shouldExcludeMember } = ctx;
+    const { key: { name }, value, static: isStatic, optional } = node;
+
+    if (shouldExcludeMember(name)) {
+      return null;
+    }
+
+    if (value.type === 'FunctionTypeAnnotation') {
+      const { params: p, returnType, rest } = value;
+      // There is no way to differeantiate foo: () => void; and
+      // foo(): void in interfaces in the babel AST (at least that
+      // I've found). Thus these are treated as methods.
+      const params = p.map(getFunctionTypeAnnotationParameterNode);
+      if (rest) {
+        params.push(getFunctionTypeAnnotationParameterNode(rest).asRestParam());
+      }
+
+      const type = getTypeAnnotationString(returnType, 'any');
+      return createInterfaceMethod(name, params, type, isStatic || false, optional).fromSource(node);
+    }
+
+    const type = getTypeAnnotationString(value, 'any');
+    return createInterfaceProperty(name, type, isStatic || false, optional);
   }
 };
 
@@ -267,4 +334,11 @@ function getFunctionTypeAnnotationParameter(node) {
   const type = getTypeAnnotationString(typeAnnotation, 'any');
 
   return `${name}${optional ? '?' : ''}: ${type}`;
+}
+
+function getFunctionTypeAnnotationParameterNode(node) {
+  const { name: { name }, typeAnnotation, optional } = node;
+  const type = getTypeAnnotationString(typeAnnotation, 'any');
+
+  return createParam(name, optional ? `${type}?` : type);
 }

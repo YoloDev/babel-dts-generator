@@ -179,6 +179,14 @@ class ParameterNode extends Node {
     this._isRest = isRest;
   }
 
+  asRestParam() {
+    if (this._isRest) {
+      return this;
+    }
+
+    return ParameterNode(this._name, this._type, true);
+  }
+
   _includeComments() {
     return false;
   }
@@ -198,10 +206,14 @@ class MethodNode extends Node {
     this._type = type;
   }
 
+  get name() {
+    return this._name;
+  }
+
   _toCode(ctx) {
     const params = this._params.map(toCode({ ...ctx, level: 0 })).join(', ');
 
-    return `${this._name}(${params}): ${this._type}`;
+    return `${this.name}(${params}): ${this._type}`;
   }
 }
 
@@ -213,6 +225,62 @@ class FunctionNode extends MethodNode {
 
   _toCode(ctx) {
     return `function ${super._toCode(ctx)}`;
+  }
+}
+
+@factory
+class InterfaceNode extends Node {
+  constructor(name, members, baseInterfaces) {
+    super();
+
+    this._name = name;
+    this._members = members;
+    this._baseInterfaces = baseInterfaces;
+  }
+
+  _toCode(ctx) {
+    const members = this._members.map(toCode({ ...ctx, level: ctx.level + 1 })).join('\n');
+    const baseInterfaces = this._baseInterfaces.map(toCode({ ...ctx, level: 0 }));
+    const extendsStr = baseInterfaces.length === 0 ? '' : ` extends ${baseInterfaces}`;
+
+    return `export interface ${this._name}${extendsStr} {\n${members}\n}`;
+  }
+}
+
+@factory
+class InterfaceMethodNode extends MethodNode {
+  constructor(name, params, type, isStatic, isOptional) {
+    super(name, params, type);
+
+    this._static = isStatic;
+    this._optional = isOptional;
+  }
+
+  get name() {
+    return this._optional ? `${super.name}?` : super.name;
+  }
+
+  _toCode(ctx) {
+    const prefix = this._static ? 'static ' : '';
+
+    return `${prefix}${super._toCode(ctx)};`;
+  }
+}
+
+@factory
+class InterfacePropertyNode extends Node {
+  constructor(name, type, isStatic, isOptional) {
+    super();
+
+    this._name = type;
+    this._static = isStatic;
+    this._optional = isOptional;
+  }
+
+  _toCode() {
+    const prefix = this._static ? 'static ' : '';
+
+    return `${prefix}${this._name}: ${this._type};`;
   }
 }
 
@@ -240,8 +308,8 @@ function emptyCtx() {
   });
 }
 
-function toCode(level, step) {
-  return (node) => node.toCode(level, step);
+function toCode(ctx) {
+  return (node) => node.toCode(ctx);
 }
 
 export function createModuleDeclaration(name, nodes) {
@@ -278,4 +346,16 @@ export function createParam(name, type, isRest = false) {
 
 export function createFunction(name, params, type) {
   return FunctionNode(name, params, type);
+}
+
+export function createInterface(name, members, baseInterfaces) {
+  return InterfaceNode(name, members, baseInterfaces);
+}
+
+export function createInterfaceMethod(name, params, type, isStatic, isOptional) {
+  return InterfaceMethodNode(name, params, type, isStatic, isOptional);
+}
+
+export function createInterfaceProperty(name, type, isStatic, isOptional) {
+  return InterfacePropertyNode(name, type, isStatic, isOptional);
 }

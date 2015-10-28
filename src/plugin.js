@@ -10,7 +10,7 @@ function withMeta(visitFn) {
   return function visit(node) {
     const meta = this.state.metadata[symb]; // eslint-disable-line no-invalid-this
     return visitFn(node, meta);
-  }
+  };
 }
 
 const skipper = {
@@ -72,7 +72,9 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
             typings,
             suppressModulePath = false,
             suppressComments = false,
-            ignoreMembers = /^_.*/
+            ignoreMembers = /^_.*/,
+            ignoreEmptyInterfaces = true,
+            ignoreEmptyClasses = false
           }
         }
       } = file.opts;
@@ -88,6 +90,8 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
       meta.suppressModulePath = suppressModulePath;
       meta.suppressComments = suppressComments;
       meta.ignoreMembers = ignoreMembers;
+      meta.ignoreEmptyInterfaces = ignoreEmptyInterfaces;
+      meta.ignoreEmptyClasses = ignoreEmptyClasses;
 
       file.metadata[symb] = meta;
     }

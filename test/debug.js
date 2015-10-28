@@ -6,7 +6,7 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'parameters/default-value';
+const name = 'parameters/restparam/restparm-interface-resttyped';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
 transform(content, {
