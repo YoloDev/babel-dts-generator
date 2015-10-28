@@ -12,7 +12,7 @@ class Node {
   }
 
   toCode(ctx) {
-    const output = this._getCommentString() + this._toCode(ctx);
+    const output = this._getCommentString(ctx) + this._toCode(ctx);
 
     return output
       .split('\n')
@@ -20,13 +20,30 @@ class Node {
       .join('\n');
   }
 
-  toString() {
-    return this.toCode(emptyCtx());
+  toString(ctx = {}) {
+    return this.toCode({ ...emptyCtx(), ...ctx });
   }
 
-  _getCommentString() {
-    // TODO: Implement
-    return '';
+  _getCommentString({ suppressComments }) {
+    if (suppressComments) {
+      return '';
+    }
+
+    const comments = this._leadingComments ?
+      this._leadingComments.map(s => {
+        switch (s.type) {
+          case 'CommentLine':
+            return `// ${s.value}`;
+
+          case 'CommentBlock':
+            return `/*${s.value}*/`;
+
+          default:
+            return null;
+        }
+      }).filter(id).join('\n') : '';
+
+    return comments.length === 0 ? '' : `\n${comments}\n`;
   }
 
   // Note: _toCode is not expected to indent itself, only children.
