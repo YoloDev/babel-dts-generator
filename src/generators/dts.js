@@ -9,7 +9,8 @@ import {
   createFunction,
   createInterface,
   createInterfaceMethod,
-  createInterfaceProperty } from './ast';
+  createInterfaceProperty,
+  createInterfaceIndexer } from './ast';
 import { id } from './utils';
 
 const ROOT = 'root';
@@ -210,7 +211,16 @@ const generators = {
     }
 
     const type = getTypeAnnotationString(value, 'any');
-    return createInterfaceProperty(name, type, isStatic || false, optional);
+    return createInterfaceProperty(name, type, isStatic || false, optional).fromSource(node);
+  },
+
+  ObjectTypeIndexer(node) {
+    const { id: { name }, value, key } = node;
+
+    const type = getTypeAnnotationString(value, 'any');
+    const keyType = getTypeAnnotationString(key, 'any');
+
+    return createInterfaceIndexer(name, keyType, type).fromSource(node);
   }
 };
 

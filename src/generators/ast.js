@@ -143,9 +143,9 @@ class ExportSpecifierNode extends Node {
   _toCode() {
     if (!this._local || this._local === this._exported) {
       return `${this._exported}`;
-    } else {
-      return `${this._exported} as ${this._local}`;
     }
+
+    return `${this._exported} as ${this._local}`;
   }
 }
 
@@ -272,15 +272,32 @@ class InterfacePropertyNode extends Node {
   constructor(name, type, isStatic, isOptional) {
     super();
 
-    this._name = type;
+    this._name = name;
+    this._type = type;
     this._static = isStatic;
     this._optional = isOptional;
   }
 
   _toCode() {
     const prefix = this._static ? 'static ' : '';
+    const name = this._optional ? `${this._name}?` : this._name;
 
-    return `${prefix}${this._name}: ${this._type};`;
+    return `${prefix}${name}: ${this._type};`;
+  }
+}
+
+@factory
+class InterfaceIndexerNode extends Node {
+  constructor(name, keyType, returnType) {
+    super();
+
+    this._name = name;
+    this._keyType = keyType;
+    this._returnType = returnType;
+  }
+
+  _toCode() {
+    return `[${this._name}: ${this._keyType}]: ${this._returnType};`;
   }
 }
 
@@ -358,4 +375,8 @@ export function createInterfaceMethod(name, params, type, isStatic, isOptional) 
 
 export function createInterfaceProperty(name, type, isStatic, isOptional) {
   return InterfacePropertyNode(name, type, isStatic, isOptional);
+}
+
+export function createInterfaceIndexer(name, keyType, returnType) {
+  return InterfaceIndexerNode(name, keyType, returnType);
 }

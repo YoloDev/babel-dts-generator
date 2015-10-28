@@ -54,8 +54,10 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
         exit: withMeta((node, meta) => {
           const output = generate(meta);
 
-          ensureDir(meta.outpath);
-          fs.writeFileSync(meta.outpath, output);
+          if (!meta.dryRun) {
+            ensureDir(meta.outpath);
+            fs.writeFileSync(meta.outpath, output);
+          }
         })
       }
     },
@@ -74,7 +76,8 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
             suppressComments = false,
             ignoreMembers = /^_.*/,
             ignoreEmptyInterfaces = true,
-            ignoreEmptyClasses = false
+            ignoreEmptyClasses = false,
+            dryRun = false
           }
         }
       } = file.opts;
@@ -92,6 +95,7 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
       meta.ignoreMembers = ignoreMembers;
       meta.ignoreEmptyInterfaces = ignoreEmptyInterfaces;
       meta.ignoreEmptyClasses = ignoreEmptyClasses;
+      meta.dryRun = dryRun;
 
       file.metadata[symb] = meta;
     }

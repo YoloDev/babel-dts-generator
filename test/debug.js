@@ -6,7 +6,7 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'parameters/restparam/restparm-interface-resttyped';
+const name = 'interface/property';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
 transform(content, {
@@ -34,7 +34,8 @@ transform(content, {
       packageName: 'spec',
       typings: '',
       suppressModulePath: true,
-      suppressComments: false
+      suppressComments: false,
+      dryRun: true
     }
   }
 });
