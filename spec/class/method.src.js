@@ -1,7 +1,11 @@
 const s = Symbol('s');
 
 export class Foo {
-  foo() {
+  constructor() {
+
+  }
+
+  foo(): number {
 
   }
 
@@ -10,7 +14,7 @@ export class Foo {
   }
 
   'foo-bar'() {
-    
+
   }
 
   [s]() {

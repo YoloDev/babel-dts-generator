@@ -6,7 +6,7 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'interface/property';
+const name = 'class/method';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
 transform(content, {

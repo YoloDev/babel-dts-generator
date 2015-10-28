@@ -10,7 +10,11 @@ import {
   createInterface,
   createInterfaceMethod,
   createInterfaceProperty,
-  createInterfaceIndexer } from './ast';
+  createInterfaceIndexer,
+  createClass,
+  createClassConstructor,
+  createClassMethod,
+  createClassProperty } from './ast';
 import { id } from './utils';
 
 const ROOT = 'root';
@@ -102,12 +106,12 @@ const generators = {
 
   FunctionDeclaration(node, ctx) {
     const { shouldExcludeMember } = ctx;
-    const { id: { name }, returnType } = node;
+    const { id: { name }, returnType, params: p } = node;
     if (shouldExcludeMember(name)) {
       return null;
     }
 
-    const params = node.params.map(generateNode({ ...ctx, state: FUNCTION }));
+    const params = p.map(generateNode({ ...ctx, state: FUNCTION }));
     if (params.some(a => a === null)) {
       // There is a argument we were unable to process,
       // so we don't emit the function (as it would end up wrong).
@@ -221,6 +225,88 @@ const generators = {
     const keyType = getTypeAnnotationString(key, 'any');
 
     return createInterfaceIndexer(name, keyType, type).fromSource(node);
+  },
+
+  ClassDeclaration(node, ctx) {
+    const { shouldExcludeMember, ignoreEmptyClasses } = ctx;
+    const { id: { name }, superClass, body } = node;
+    if (shouldExcludeMember(name)) {
+      return null;
+    }
+
+    if (superClass && superClass.type !== 'Identifier') {
+      console.warn('Only identifiers supported for super classes.');
+      return null;
+    }
+
+    const generate = generateNode({ ...ctx, state: CLASS });
+    const superName = superClass ? superClass.name : null;
+    const members = body.body.map(generate).filter(id);
+
+    if (members.length === 0 && ignoreEmptyClasses) {
+      return null;
+    }
+
+    return createClass(name, superName, members).fromSource(node);
+  },
+
+  MethodDefinition(node, ctx) {
+    const { shouldExcludeMember } = ctx;
+    const { kind, computed, value: { returnType, params: p }, static: isStatic, key: n } = node;
+
+    const params = p.map(generateNode({ ...ctx, state: FUNCTION }));
+    if (params.some(a => a === null)) {
+      // There is a argument we were unable to process,
+      // so we don't emit the function (as it would end up wrong).
+      console.warn(`Failed processing arguments for function ${name}.`);
+      return null;
+    }
+
+    if (kind === 'constructor') {
+      return createClassConstructor(params).fromSource(node);
+    }
+
+    const type = getTypeAnnotation(returnType, 'any');
+    let name;
+    switch (n.type) {
+      case 'Identifier':
+        if (shouldExcludeMember(n.name, { computed })) {
+          return null;
+        }
+
+        name = computed ? `[${n.name}]` : n.name;
+        break;
+
+      case 'Literal':
+        if (shouldExcludeMember(n.value, { computed })) {
+          return null;
+        }
+
+        name = n.raw;
+        break;
+
+      default:
+        console.warn(`Invalid method name type ${n.type}`);
+        return null;
+    }
+
+    if (node.kind === 'set') {
+      // ignore setters
+      return null;
+    }
+
+    if (node.kind === 'get') {
+      return createClassProperty(name, type, isStatic).fromSource(node);
+    }
+
+    return createClassMethod(name, params, type, isStatic).fromSource(node);
+  },
+
+  ClassProperty(node) {
+    const { key: { name }, typeAnnotation, static: isStatic } = node;
+
+    const type = getTypeAnnotation(typeAnnotation, 'any');
+    return createClassProperty(name, type, isStatic).fromSource(node);
   }
 };
 
