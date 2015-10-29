@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "node node_modules/babel/bin/babel.js src --out-dir lib --source-maps --stage 1",
-    "test": "npm run build && node node_modules/babel/bin/babel-node.js test/index.js",
+    "lint": "node node_modules/eslint/bin/eslint.js src/**/*.js",
+    "test": "npm run lint && npm run build && node node_modules/babel/bin/babel-node.js test/index.js",
     "watch": "node node_modules/nodemon/bin/nodemon.js --exec \"npm run test\" --watch src --watch spec --watch test"
   },
   "repository": {
