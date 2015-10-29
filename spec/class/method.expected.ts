@@ -1,5 +1,6 @@
 export class Foo {
-  foo(): any;
+  constructor();
+  foo(): number;
   'bar-baz'(): any;
   'foo-bar'(): any;
   [s](): any;
