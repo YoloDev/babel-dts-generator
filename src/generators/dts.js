@@ -11,6 +11,7 @@ import {
   createInterfaceMethod,
   createInterfaceProperty,
   createInterfaceIndexer,
+  createInterfaceCall,
   createClass,
   createClassConstructor,
   createClassMethod,
@@ -180,7 +181,7 @@ const generators = {
 
     for (const method of callProperties) {
       const member = generate(method);
-      if (method !== null) {
+      if (member !== null) {
         members.push(member);
       }
     }
@@ -225,6 +226,22 @@ const generators = {
     const keyType = getTypeAnnotationString(key, 'any');
 
     return createInterfaceIndexer(name, keyType, type).fromSource(node);
+  },
+
+  ObjectTypeCallProperty(node) {
+    const { value } = node;
+
+    const { params: p, returnType, rest } = value;
+    // There is no way to differeantiate foo: () => void; and
+    // foo(): void in interfaces in the babel AST (at least that
+    // I've found). Thus these are treated as methods.
+    const params = p.map(getFunctionTypeAnnotationParameterNode);
+    if (rest) {
+      params.push(getFunctionTypeAnnotationParameterNode(rest).asRestParam());
+    }
+
+    const type = getTypeAnnotationString(returnType, 'any');
+    return createInterfaceCall(params, type).fromSource(node);
   },
 
   ClassDeclaration(node, ctx) {

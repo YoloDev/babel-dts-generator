@@ -232,7 +232,7 @@ class MethodNode extends Node {
     const params = this._params.map(toCode({ ...ctx, level: 0 })).join(', ');
     const type = this._type !== null ? `: ${this._type}` : '';
 
-    return `${this.name}(${params})${type}`;
+    return `${this.name || ''}(${params})${type}`;
   }
 }
 
@@ -263,6 +263,17 @@ class InterfaceNode extends Node {
     const extendsStr = baseInterfaces.length === 0 ? '' : ` extends ${baseInterfaces}`;
 
     return `export interface ${this._name}${extendsStr} {\n${members}\n}`;
+  }
+}
+
+@factory
+class InterfaceCallNode extends MethodNode {
+  constructor(params, type) {
+    super(null, params, type);
+  }
+
+  _toCode(ctx) {
+    return `${super._toCode(ctx)};`;
   }
 }
 
@@ -459,6 +470,10 @@ export function createInterfaceProperty(name, type, isStatic, isOptional) {
 
 export function createInterfaceIndexer(name, keyType, returnType) {
   return InterfaceIndexerNode(name, keyType, returnType);
+}
+
+export function createInterfaceCall(params, type) {
+  return InterfaceCallNode(params, type);
 }
 
 export function createClass(name, superName, members) {
