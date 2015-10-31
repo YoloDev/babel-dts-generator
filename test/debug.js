@@ -6,36 +6,29 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'interface/callproperty';
+const name = 'class/method';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
 transform(content, {
   filename: name,
   filenameRelative: name,
-  modules: 'common',
+  //modules: 'common',
   sourceMap: false,
-  moduleRoot: path.resolve(`${__dirname}/../src`).replace(/\\/g, '/'),
+  moduleRoot: path.resolve('./src').replace(/\\/g, '/'),
   moduleIds: false,
-  experimental: false,
+  //experimental: false,
   comments: false,
   compact: false,
   code: true,
-  stage: 2,
-  loose: 'all',
-  optional: [
-    'es7.decorators',
-    'es7.classProperties'
-  ],
+  presets: ['es2015', 'stage-1'],
+  //loose: 'all',
   plugins: [
-    './lib/index'
-  ],
-  extra: {
-    dts: {
+    'syntax-flow',
+    ['./lib/index', {
       packageName: 'spec',
       typings: '',
       suppressModulePath: true,
-      suppressComments: false,
-      dryRun: true
-    }
-  }
+      suppressComments: false
+    }]
+  ]
 });

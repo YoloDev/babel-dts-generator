@@ -7,32 +7,32 @@ import { generate } from './generators';
 const symb = Symbol('dts-meta');
 
 function withMeta(visitFn) {
-  return function visit(node) {
-    const meta = this.state.metadata[symb]; // eslint-disable-line no-invalid-this
-    return visitFn(node, meta);
+  return function visit(path, { file: { metadata } }) {
+    const meta = metadata[symb];
+    return visitFn(path, meta);
   };
 }
 
 const skipper = {
-  enter: withMeta((node, { moduleExports, skipStack }) => {
+  enter: withMeta((path, { moduleExports, skipStack }) => {
     if (skipStack.length === 0) {
-      moduleExports.push(node);
+      moduleExports.push(path.node);
     }
 
-    skipStack.push(node);
+    skipStack.push(path);
   }),
 
-  exit: withMeta((node, { skipStack }) => {
-    if (node !== skipStack.pop()) {
+  exit: withMeta((path, { skipStack }) => {
+    if (path !== skipStack.pop()) {
       throw new Error('skipStack unballance');
     }
   })
 };
 
-export function plugin({ Plugin, types: t }) { // eslint-disable-line
-  return new Plugin('aurelia-babel-plugin', {
+export function plugin({ types: t }) { // eslint-disable-line
+  return {
     visitor: {
-      ExportAllDeclaration: withMeta((node, { moduleExports }) => {
+      ExportAllDeclaration: withMeta(({ node }, { moduleExports }) => {
         moduleExports.push(node);
       }),
 
@@ -42,16 +42,16 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
 
       ClassDeclaration: skipper,
 
-      ImportDeclaration: withMeta((node, { moduleImports }) => {
+      ImportDeclaration: withMeta(({ node }, { moduleImports }) => {
         moduleImports.push(node);
       }),
 
-      InterfaceDeclaration: withMeta((node, { interfaces }) => {
+      InterfaceDeclaration: withMeta(({ node }, { interfaces }) => {
         interfaces.push(node);
       }),
 
       Program: {
-        exit: withMeta((node, meta) => {
+        exit: withMeta(({ node }, meta) => {
           const output = generate(meta);
 
           if (!meta.dryRun) {
@@ -62,25 +62,23 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
       }
     },
 
-    pre(file) {
+    pre(file, { opts }) {
       //console.log(file.opts);
       const meta = {};
       const {
         filename,
-        moduleRoot,
-        extra: {
-          dts: {
-            packageName,
-            typings,
-            suppressModulePath = false,
-            suppressComments = false,
-            ignoreMembers = /^_.*/,
-            ignoreEmptyInterfaces = true,
-            ignoreEmptyClasses = false,
-            dryRun = false
-          }
-        }
+        moduleRoot
       } = file.opts;
+      const {
+        packageName,
+        typings,
+        suppressModulePath = false,
+        suppressComments = false,
+        ignoreMembers = /^_.*/,
+        ignoreEmptyInterfaces = true,
+        ignoreEmptyClasses = false,
+        dryRun = false
+      } = opts;
 
       const moduleId = `${packageName}/${relative(moduleRoot, filename).replace('.js', '')}`;
       meta.root = packageName;
@@ -99,5 +97,5 @@ export function plugin({ Plugin, types: t }) { // eslint-disable-line
 
       file.metadata[symb] = meta;
     }
-  });
+  };
 }
