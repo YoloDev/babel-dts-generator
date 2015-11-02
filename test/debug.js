@@ -20,7 +20,7 @@ transform(content, {
   comments: false,
   compact: false,
   code: true,
-  presets: ['es2015', 'stage-1'],
+  presets: ['stage-1', 'es2015'],
   //loose: 'all',
   plugins: [
     'syntax-flow',

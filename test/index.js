@@ -50,7 +50,7 @@ function run(files, index, errors) {
         comments: false,
         compact: false,
         code: true,
-        presets: ['es2015', 'stage-1'],
+        presets: ['stage-1', 'es2015'],
         //loose: 'all',
         plugins: [
           'syntax-flow',
@@ -114,4 +114,7 @@ function run(files, index, errors) {
 
 glob('spec/**/*.src.js').then(files => {
   return run(files, 0, 0);
-}).catch(e => console.error(e));
+}).catch(e => {
+  console.error(e);
+  process.exit(1); // eslint-disable-line
+});
