@@ -319,6 +319,9 @@ let exportGenerators = {
       if (restparam) {
         restparam = `${params ? ', ' : ''}...${restparam}`;
       }
+      else {
+        restparam = '';
+      }
 
       return `${staticStr}${name}(${params}${restparam}): ${returnType};`;
     }
