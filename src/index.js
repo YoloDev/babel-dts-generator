@@ -323,7 +323,11 @@ let exportGenerators = {
         restparam = '';
       }
 
-      return `${generateComment(node.leadingComments)}${staticStr}${name}(${params}${restparam}): ${returnType};`;
+      if (optionalStr) {
+        return `${generateComment(node.leadingComments)}${staticStr}${name}${optionalStr}: (${params}${restparam}) => ${returnType};`;
+      } else {
+        return `${generateComment(node.leadingComments)}${staticStr}${name}(${params}${restparam}): ${returnType};`;
+      }
     }
 
     let type = 'any';
