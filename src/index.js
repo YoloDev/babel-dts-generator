@@ -128,7 +128,11 @@ let exportGenerators = {
         if (classString === IGNORED) {
           return '';
         } else {
-          return `${generateComment(node.leadingComments)}export ${classString}`;
+          let strDeco = '';
+          if (node.declaration.decorators) {
+            strDeco = node.declaration.decorators.map(s => `${generateComment(s.leadingComments)}`).join('');
+          }
+          return `${strDeco}${generateComment(node.leadingComments)}${generateComment(node.declaration.leadingComments)}export ${classString}`;
         }
       } else {
         if (!shouldExcludeMember(node.declaration.id.name)) {
@@ -215,12 +219,12 @@ let exportGenerators = {
   },
 
   ClassDeclaration(node) {
-    const {id: {name}, superClass, body} = node;
+    const {id: {name}, superClass, body, decorators} = node;
     if (shouldExcludeMember(name)) {
       return IGNORED;
     }
 
-    let str = `${generateComment(node.leadingComments)}class ${name} `;
+    let str = `class ${name} `;
     if (superClass) {
       str += `extends ${superClass.name} `;
     }
