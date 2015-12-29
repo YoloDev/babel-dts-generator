@@ -427,6 +427,12 @@ let exportGenerators = {
 
   Literal(node) {
     return node.raw;
+  },
+
+  ObjectTypeCallProperty(node) {
+    const params = node.value.params.map(getFunctionTypeAnnotationParameter).join(', ');
+    const returnType = getTypeAnnotationString(node.value.returnType);
+    return `(${params}): ${returnType};`;
   }
 };
 
