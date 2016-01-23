@@ -6,10 +6,10 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'class/method';
+const name = 'interface/callproperty';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
-transform(content, {
+const result = transform(content, {
   filename: name,
   filenameRelative: name,
   //modules: 'common',
@@ -20,7 +20,7 @@ transform(content, {
   comments: false,
   compact: false,
   code: true,
-  presets: ['stage-1', 'es2015'],
+  presets: ['es2015', 'stage-1'],
   //loose: 'all',
   plugins: [
     'syntax-flow',
@@ -28,7 +28,11 @@ transform(content, {
       packageName: 'spec',
       typings: '',
       suppressModulePath: true,
-      suppressComments: false
-    }]
+      suppressComments: false,
+      dryRun: true
+    }],
+    'transform-decorators-legacy'
   ]
 });
+
+debugger;

@@ -50,7 +50,7 @@ function run(files, index, errors) {
         comments: false,
         compact: false,
         code: true,
-        presets: ['stage-1', 'es2015'],
+        presets: ['es2015', 'stage-1'],
         //loose: 'all',
         plugins: [
           'syntax-flow',
@@ -59,7 +59,8 @@ function run(files, index, errors) {
             typings: '',
             suppressModulePath: true,
             suppressComments: false
-          }]
+          }],
+          'transform-decorators-legacy'
         ]
       });
 
