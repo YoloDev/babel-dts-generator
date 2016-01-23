@@ -42,31 +42,26 @@ function run(files, index, errors) {
       transform(content, {
         filename: name,
         filenameRelative: name,
-        modules: 'common',
+        //modules: 'common',
         sourceMap: false,
         moduleRoot: path.resolve('./src').replace(/\\/g, '/'),
         moduleIds: false,
-        experimental: false,
+        //experimental: false,
         comments: false,
         compact: false,
         code: true,
-        stage: 2,
-        loose: 'all',
-        optional: [
-          'es7.decorators',
-          'es7.classProperties'
-        ],
+        presets: ['es2015', 'stage-1'],
+        //loose: 'all',
         plugins: [
-          './lib/index'
-        ],
-        extra: {
-          dts: {
+          'syntax-flow',
+          ['./lib/index', {
             packageName: 'spec',
             typings: '',
             suppressModulePath: true,
             suppressComments: false
-          }
-        }
+          }],
+          'transform-decorators-legacy'
+        ]
       });
 
       const dtsName = file.replace('.src.js', '.d.ts');
@@ -83,7 +78,7 @@ function run(files, index, errors) {
             actual = normalize(actual);
 
             expected = expected.trim();
-            actual = actual.split('\n').slice(1, -1).map(l => l.substring(2) /* remove leading whitespace */).join('\n').trim();
+            actual = actual.split('\n').slice(1, -1).map(l => l.substring(2)/* remove leading whitespace */).join('\n').trim();
 
             const diff = diffLines(expected, actual, { ignoreWhitespace: true });
             if (diff.length > 1 || diff[0].removed) {
@@ -120,4 +115,7 @@ function run(files, index, errors) {
 
 glob('spec/**/*.src.js').then(files => {
   return run(files, 0, 0);
-}).catch(e => console.error(e));
+}).catch(e => {
+  console.error(e);
+  process.exit(1); // eslint-disable-line
+});

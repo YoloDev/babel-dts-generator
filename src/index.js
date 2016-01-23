@@ -1,3 +1,4 @@
-import { plugin } from './plugin';
+/* eslint-disable */
 
-export default plugin;
+// TODO: Rewrite back to use ES6 once it's supported
+module.exports = require('./plugin').plugin;

@@ -267,9 +267,9 @@ const generators = {
     return createClass(name, superName, members).fromSource(node);
   },
 
-  MethodDefinition(node, ctx) {
+  ClassMethod(node, ctx) {
     const { shouldExcludeMember } = ctx;
-    const { kind, computed, value: { returnType, params: p }, static: isStatic, key: n } = node;
+    const { kind, computed, returnType, params: p, static: isStatic, key: n } = node;
 
     const params = p.map(generateNode({ ...ctx, state: FUNCTION }));
     if (params.some(a => a === null)) {
@@ -294,12 +294,12 @@ const generators = {
         name = computed ? `[${n.name}]` : n.name;
         break;
 
-      case 'Literal':
+      case 'StringLiteral':
         if (shouldExcludeMember(n.value, { computed })) {
           return null;
         }
 
-        name = n.raw;
+        name = n.extra.raw;
         break;
 
       default:

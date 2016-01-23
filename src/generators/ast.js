@@ -202,7 +202,7 @@ class ParameterNode extends Node {
       return this;
     }
 
-    return ParameterNode(this._name, this._type, true);
+    return new ParameterNode(this._name, this._type, true);
   }
 
   _includeComments() {
