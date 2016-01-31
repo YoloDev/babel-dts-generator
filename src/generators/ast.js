@@ -67,7 +67,7 @@ class ModuleDeclarationNode extends Node {
 
   _toCode(ctx) {
     const code = this._children.map(toCode(ctx.indent())).join('\n');
-    return `declare module ${this._name} {\n${code}\n}`;
+    return `declare module '${this._name}' {\n${code}\n}`;
   }
 }
 
