@@ -101,6 +101,21 @@ class ExportNamedDeclarationNode extends Node {
 }
 
 @factory
+class ImportDeclarationNode extends Node {
+  constructor(decl) {
+    super();
+    debugger;
+    this._source = decl.source.value;
+  }
+
+  _toCode(ctx) {
+    debugger;
+    const source = this._source;
+    return `import '${source}';`;
+  }
+}
+
+@factory
 class VariableDeclarationNode extends Node {
   constructor(kind, declarations) {
     super();
@@ -184,6 +199,44 @@ class ExportNode extends Node {
     }
 
     return `export {\n${exported}\n};`;
+  }
+}
+
+@factory
+class ImportSpecifierNode extends Node {
+  constructor(imported, local) {
+    super();
+
+    this._imported = imported;
+    this._local = local;
+  }
+
+  _toCode() {
+    if (!this._local || this._local === this._imported) {
+      return `${this._imported}`;
+    }
+
+    return `${this._imported} as ${this._local}`;
+  }
+}
+
+@factory
+class ImportNode extends Node {
+  constructor(specifiers, source) {
+    super();
+
+    this._specifiers = specifiers;
+    this._source = source;
+  }
+
+  _toCode(ctx) {
+    const specifiers = this._specifiers.map(toCode({ ...ctx, level: 0 })).join(', ');
+
+    if (this._source) {
+      return `import {${specifiers}} from '${this._source}';`;
+    }
+
+    return `import {${specifiers}};`;
   }
 }
 
@@ -432,6 +485,10 @@ export function createExportDeclaration(decl) {
   return ExportNamedDeclarationNode(decl);
 }
 
+export function createImportDeclaration(decl) {
+  return ImportDeclarationNode(decl);
+}
+
 export function createVariableDeclaration(kind, decs) {
   return VariableDeclarationNode(kind, decs);
 }
@@ -446,6 +503,14 @@ export function createExportSpecifier(exported, local) {
 
 export function createExport(specifiers, source) {
   return ExportNode(specifiers, source);
+}
+
+export function createImportSpecifier(imported, local) {
+  return ImportSpecifierNode(imported, local);
+}
+
+export function createImport(specifiers, source) {
+  return ImportNode(specifiers, source);
 }
 
 export function createParam(name, type, isRest = false) {

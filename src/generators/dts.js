@@ -1,10 +1,13 @@
 import {
   createExportAllFrom,
   createExportDeclaration,
+  createImportDeclaration,
   createVariableDeclaration,
   createVariableDeclarator,
   createExportSpecifier,
   createExport,
+  createImportSpecifier,
+  createImport,
   createParam,
   createFunction,
   createInterface,
@@ -69,6 +72,28 @@ const generators = {
 
     console.warn('Unknown export named declaration format');
     return null;
+  },
+  
+  ImportDeclaration(node, { generate }) {
+    console.log('ImportDeclaration...');
+    if (node.specifiers) {
+      const specifiers = node.specifiers.map(generate);
+
+      if (specifiers.length === 0) {
+        return null;
+      }
+
+      return createImport(specifiers, node.source.value).fromSource(node);
+    }
+    
+    return createImportDeclaration(node).fromSource(node);
+  },
+  
+  ImportSpecifier(node) {
+    const local = node.local.name;
+    const imported = node.imported.name;
+
+    return createImportSpecifier(imported, local).fromSource(node);
   },
 
   VariableDeclaration(node, { generate }) {
