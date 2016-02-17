@@ -180,10 +180,10 @@ const generators = {
       return null;
     }
 
-    const { name, typeAnnotation } = node;
+    const { name, typeAnnotation, optional } = node;
     const type = getTypeAnnotation(typeAnnotation, 'any');
 
-    return createParam(name, type).fromSource(node);
+    return createParam(name, type, false, optional).fromSource(node);
   },
 
   AssignmentPattern(node, { state }) {

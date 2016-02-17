@@ -275,12 +275,13 @@ class ImportNode extends Node {
 
 @factory
 class ParameterNode extends Node {
-  constructor(name, type, isRest) {
+  constructor(name, type, isRest, isOptional) {
     super();
 
     this._name = name;
     this._type = type;
     this._isRest = isRest;
+    this._isOptional = isOptional;
   }
 
   asRestParam() {
@@ -296,7 +297,7 @@ class ParameterNode extends Node {
   }
 
   _toCode() {
-    return `${this._isRest ? '...' : ''}${this._name}: ${this._type}`;
+    return `${this._isRest ? '...' : ''}${this._name}${this._isOptional ? '?' : ''}: ${this._type}`;
   }
 }
 
@@ -561,8 +562,8 @@ export function createImport(encloseSpecifiers, specifiers, source) {
   return ImportNode(encloseSpecifiers, specifiers, source);
 }
 
-export function createParam(name, type, isRest = false) {
-  return ParameterNode(name, type, isRest);
+export function createParam(name, type, isRest = false, isOptional = false) {
+  return ParameterNode(name, type, isRest, isOptional);
 }
 
 export function createFunction(name, params, type) {
