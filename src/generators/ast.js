@@ -6,13 +6,18 @@ class Node {
   }
 
   fromSource(node) {
-    this._leadingComments = node.leadingComments || null;
+    let decoLeadingComments = null;
+    if (node.decorators && node.decorators.length > 0) {
+      decoLeadingComments = node.decorators[0].leadingComments;
+    }
+    this._leadingComments = node.leadingComments || decoLeadingComments || null;
 
     return this;
   }
 
   toCode(ctx) {
-    const output = this._getCommentString(ctx) + this._toCode(ctx);
+    let {includeComment = true, includeCode = true} = ctx;
+    const output = `${includeComment ? this._getCommentString(ctx) : ''}${includeCode ? this._toCode(ctx) : ''}`;
 
     return output
       .split('\n')
@@ -93,10 +98,11 @@ class ExportNamedDeclarationNode extends Node {
   }
 
   _toCode(ctx) {
-    const decl = this._declaration.toCode({ ...ctx, level: 0 });
+    const comment = this._declaration.toCode({ ...ctx, level: 0, includeComment: true, includeCode: false });
+    const decl = this._declaration.toCode({ ...ctx, level: 0, includeComment: false, includeCode: true });
     const suffix = this._declaration.preventSemi ? '' : ';';
 
-    return `export ${decl}${suffix}`;
+    return `${comment}export ${decl}${suffix}`;
   }
 }
 
