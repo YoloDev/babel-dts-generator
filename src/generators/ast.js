@@ -379,6 +379,13 @@ class InterfaceMethodNode extends MethodNode {
   _toCode(ctx) {
     const prefix = this._static ? 'static ' : '';
 
+    if (this._optional) {
+      const params = this._params.map(toCode({ ...ctx, level: 0 })).join(', ');
+      const type = this._type !== null ? ` => ${this._type}` : '';
+
+      return `${prefix}${this.name || ''}: (${params})${type};`;
+    }
+    
     return `${prefix}${super._toCode(ctx)};`;
   }
 }
