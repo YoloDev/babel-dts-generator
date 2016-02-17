@@ -104,12 +104,10 @@ class ExportNamedDeclarationNode extends Node {
 class ImportDeclarationNode extends Node {
   constructor(decl) {
     super();
-    debugger;
     this._source = decl.source.value;
   }
 
   _toCode(ctx) {
-    debugger;
     const source = this._source;
     return `import '${source}';`;
   }
@@ -221,22 +219,57 @@ class ImportSpecifierNode extends Node {
 }
 
 @factory
+class ImportDefaultSpecifierNode extends Node {
+  constructor(local) {
+    super();
+
+    this._local = local;
+  }
+
+  _toCode() {
+    return `${this._local}`;
+  }
+}
+
+@factory
+class ImportNamespaceSpecifierNode extends Node {
+  constructor(local) {
+    super();
+
+    this._local = local;
+  }
+
+  _toCode() {
+    return `* as ${this._local}`;
+  }
+}
+
+@factory
 class ImportNode extends Node {
-  constructor(specifiers, source) {
+  constructor(encloseSpecifiers, specifiers, source) {
     super();
 
     this._specifiers = specifiers;
+    this._encloseSpecifiers = encloseSpecifiers;
     this._source = source;
   }
 
   _toCode(ctx) {
     const specifiers = this._specifiers.map(toCode({ ...ctx, level: 0 })).join(', ');
 
-    if (this._source) {
-      return `import {${specifiers}} from '${this._source}';`;
-    }
+    if (this._encloseSpecifiers) {
+      if (this._source) {
+        return `import {${specifiers}} from '${this._source}';`;
+      }
 
-    return `import {${specifiers}};`;
+      return `import {${specifiers}};`;
+    } else {
+      if (this._source) {
+        return `import ${specifiers} from '${this._source}';`;
+      }
+
+      return `import ${specifiers};`;
+    }
   }
 }
 
@@ -509,8 +542,16 @@ export function createImportSpecifier(imported, local) {
   return ImportSpecifierNode(imported, local);
 }
 
-export function createImport(specifiers, source) {
-  return ImportNode(specifiers, source);
+export function createImportDefaultSpecifier(imported, local) {
+  return ImportDefaultSpecifierNode(imported, local);
+}
+
+export function createImportNamespaceSpecifier(local) {
+  return ImportNamespaceSpecifierNode(local);
+}
+
+export function createImport(encloseSpecifiers, specifiers, source) {
+  return ImportNode(encloseSpecifiers, specifiers, source);
 }
 
 export function createParam(name, type, isRest = false) {

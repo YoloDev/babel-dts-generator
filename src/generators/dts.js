@@ -7,6 +7,8 @@ import {
   createExportSpecifier,
   createExport,
   createImportSpecifier,
+  createImportDefaultSpecifier,
+  createImportNamespaceSpecifier,
   createImport,
   createParam,
   createFunction,
@@ -75,15 +77,27 @@ const generators = {
   },
   
   ImportDeclaration(node, { generate }) {
-    console.log('ImportDeclaration...');
     if (node.specifiers) {
-      const specifiers = node.specifiers.map(generate);
+      const importSpecifiers = node.specifiers.filter(s => s.type === 'ImportSpecifier').map(generate);
 
-      if (specifiers.length === 0) {
-        return null;
+      if (importSpecifiers.length === 0) {
+        const importOtherSpecifiers = node.specifiers.filter(s => s.type !== 'ImportSpecifier').map(generate);
+        
+        if (importOtherSpecifiers.length === 0) {
+          return createImportDeclaration(node).fromSource(node);
+        }
+        
+        // for this case, the specifiers should not be enclosed in {}
+        //   import q from 'bat';
+        //   import * as foons from 'bun';
+        return createImport(false, importOtherSpecifiers, node.source.value).fromSource(node);
       }
 
-      return createImport(specifiers, node.source.value).fromSource(node);
+      // for this case, the specifiers should be enclosed in {}
+      //   import {x} from 'bar';
+      //   import {y,z as w} from 'baz';
+      //   import {default as q2} from 'bat';
+      return createImport(true, importSpecifiers, node.source.value).fromSource(node);
     }
     
     return createImportDeclaration(node).fromSource(node);
@@ -94,6 +108,18 @@ const generators = {
     const imported = node.imported.name;
 
     return createImportSpecifier(imported, local).fromSource(node);
+  },
+
+  ImportDefaultSpecifier(node) {
+    const local = node.local.name;
+
+    return createImportDefaultSpecifier(local).fromSource(node);
+  },
+
+  ImportNamespaceSpecifier(node) {
+    const local = node.local.name;
+ 
+    return createImportNamespaceSpecifier(local).fromSource(node);
   },
 
   VariableDeclaration(node, { generate }) {
