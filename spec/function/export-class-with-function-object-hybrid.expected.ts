@@ -4,6 +4,6 @@
     complete(result: any): Promise;
     (): Promise;
   }
-  export class foo {
+  export class Foo {
     run(instruction: number, next: INext): void;
   }

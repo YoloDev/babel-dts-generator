@@ -5,7 +5,7 @@ interface INext {
   complete: (result: any) => Promise;
 }
 
-export class foo {
+export class Foo {
   run(instruction: number, next: INext): void {
     next.cancel = (result: any) => {
       return new Promise();
