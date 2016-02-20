@@ -6,17 +6,13 @@ class Node {
   }
 
   fromSource(node) {
-    let decoLeadingComments = null;
-    if (node.decorators && node.decorators.length > 0) {
-      decoLeadingComments = node.decorators[0].leadingComments;
-    }
-    this._leadingComments = node.leadingComments || decoLeadingComments || null;
+    this._leadingComments = node.leadingComments || null;
 
     return this;
   }
 
   toCode(ctx) {
-    let {includeComment = true, includeCode = true} = ctx;
+    let { includeComment = true, includeCode = true } = ctx;
     const output = `${includeComment ? this._getCommentString(ctx) : ''}${includeCode ? this._toCode(ctx) : ''}`;
 
     return output
@@ -38,7 +34,7 @@ class Node {
       this._leadingComments.map(s => {
         switch (s.type) {
           case 'CommentLine':
-            return `// ${s.value}`;
+            return `//${s.value}`;
 
           case 'CommentBlock':
             return `/*${s.value}*/`;
@@ -59,6 +55,18 @@ class Node {
   _includeComments() {
     return true;
   }
+}
+
+class DecorableNode extends Node {
+  fromSource(node) {
+    let decoLeadingComments = null;
+    if (node.decorators && node.decorators.length > 0) {
+      decoLeadingComments = node.decorators[0].leadingComments;
+    }
+    this._leadingComments = node.leadingComments || decoLeadingComments || null;
+
+    return this;
+  }  
 }
 
 @factory
@@ -308,7 +316,7 @@ class ParameterNode extends Node {
 }
 
 @factory
-class MethodNode extends Node {
+class MethodNode extends DecorableNode {
   constructor(name, params, type) {
     super();
 
@@ -432,7 +440,7 @@ class InterfaceIndexerNode extends Node {
 }
 
 @factory
-class ClassNode extends Node {
+class ClassNode extends DecorableNode {
   constructor(name, superName, members) {
     super();
 
