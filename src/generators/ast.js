@@ -269,15 +269,17 @@ class ImportNode extends Node {
   }
 
   _toCode(ctx) {
-    const specifiers = this._specifiers.map(toCode({ ...ctx, level: 0 })).join(', ');
+    let specifiers = null;
 
     if (this._encloseSpecifiers) {
+      specifiers = this._specifiers.map(toCode({ ...ctx, level: 1 })).join(',\n');
       if (this._source) {
-        return `import {${specifiers}} from '${this._source}';`;
+        return `import {\n${specifiers}\n} from '${this._source}';`;
       }
 
-      return `import {${specifiers}};`;
+      return `import {\n${specifiers}\n};`;
     } else {
+      specifiers = this._specifiers.map(toCode({ ...ctx, level: 0 })).join(',\n');
       if (this._source) {
         return `import ${specifiers} from '${this._source}';`;
       }
