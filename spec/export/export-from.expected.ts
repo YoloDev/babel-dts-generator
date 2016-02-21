@@ -1,6 +1,9 @@
 export * from 'a';
 export * from 'spec/b';
 export {
+  onefoo
+} from 'c';
+export {
   foo,
   bar as baz
 } from 'a';

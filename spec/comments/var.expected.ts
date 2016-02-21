@@ -1,4 +1,4 @@
-//  A variable
+// A variable
 export var variable: number;
 
 /* A scoped variable */

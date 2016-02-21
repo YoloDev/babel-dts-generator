@@ -12,7 +12,8 @@ class Node {
   }
 
   toCode(ctx) {
-    const output = this._getCommentString(ctx) + this._toCode(ctx);
+    let { includeComment = true, includeCode = true } = ctx;
+    const output = `${includeComment ? this._getCommentString(ctx) : ''}${includeCode ? this._toCode(ctx) : ''}`;
 
     return output
       .split('\n')
@@ -33,7 +34,7 @@ class Node {
       this._leadingComments.map(s => {
         switch (s.type) {
           case 'CommentLine':
-            return `// ${s.value}`;
+            return `//${s.value}`;
 
           case 'CommentBlock':
             return `/*${s.value}*/`;
@@ -56,6 +57,18 @@ class Node {
   }
 }
 
+class DecorableNode extends Node {
+  fromSource(node) {
+    let decoLeadingComments = null;
+    if (node.decorators && node.decorators.length > 0) {
+      decoLeadingComments = node.decorators[0].leadingComments;
+    }
+    this._leadingComments = node.leadingComments || decoLeadingComments || null;
+
+    return this;
+  }  
+}
+
 @factory
 class ModuleDeclarationNode extends Node {
   constructor(name, children) {
@@ -67,7 +80,7 @@ class ModuleDeclarationNode extends Node {
 
   _toCode(ctx) {
     const code = this._children.map(toCode(ctx.indent())).join('\n');
-    return `declare module ${this._name} {\n${code}\n}`;
+    return `declare module '${this._name}' {\n${code}\n}`;
   }
 }
 
@@ -93,10 +106,24 @@ class ExportNamedDeclarationNode extends Node {
   }
 
   _toCode(ctx) {
-    const decl = this._declaration.toCode({ ...ctx, level: 0 });
+    const comment = this._declaration.toCode({ ...ctx, level: 0, includeComment: true, includeCode: false });
+    const decl = this._declaration.toCode({ ...ctx, level: 0, includeComment: false, includeCode: true });
     const suffix = this._declaration.preventSemi ? '' : ';';
 
-    return `export ${decl}${suffix}`;
+    return `${comment}export ${decl}${suffix}`;
+  }
+}
+
+@factory
+class ImportDeclarationNode extends Node {
+  constructor(decl) {
+    super();
+    this._source = decl.source.value;
+  }
+
+  _toCode(ctx) {
+    const source = this._source;
+    return `import '${source}';`;
   }
 }
 
@@ -188,13 +215,89 @@ class ExportNode extends Node {
 }
 
 @factory
+class ImportSpecifierNode extends Node {
+  constructor(imported, local) {
+    super();
+
+    this._imported = imported;
+    this._local = local;
+  }
+
+  _toCode() {
+    if (!this._local || this._local === this._imported) {
+      return `${this._imported}`;
+    }
+
+    return `${this._imported} as ${this._local}`;
+  }
+}
+
+@factory
+class ImportDefaultSpecifierNode extends Node {
+  constructor(local) {
+    super();
+
+    this._local = local;
+  }
+
+  _toCode() {
+    return `${this._local}`;
+  }
+}
+
+@factory
+class ImportNamespaceSpecifierNode extends Node {
+  constructor(local) {
+    super();
+
+    this._local = local;
+  }
+
+  _toCode() {
+    return `* as ${this._local}`;
+  }
+}
+
+@factory
+class ImportNode extends Node {
+  constructor(encloseSpecifiers, specifiers, source) {
+    super();
+
+    this._specifiers = specifiers;
+    this._encloseSpecifiers = encloseSpecifiers;
+    this._source = source;
+  }
+
+  _toCode(ctx) {
+    let specifiers = null;
+
+    if (this._encloseSpecifiers) {
+      specifiers = this._specifiers.map(toCode({ ...ctx, level: 1 })).join(',\n');
+      if (this._source) {
+        return `import {\n${specifiers}\n} from '${this._source}';`;
+      }
+
+      return `import {\n${specifiers}\n};`;
+    } else {
+      specifiers = this._specifiers.map(toCode({ ...ctx, level: 0 })).join(',\n');
+      if (this._source) {
+        return `import ${specifiers} from '${this._source}';`;
+      }
+
+      return `import ${specifiers};`;
+    }
+  }
+}
+
+@factory
 class ParameterNode extends Node {
-  constructor(name, type, isRest) {
+  constructor(name, type, isRest, isOptional) {
     super();
 
     this._name = name;
     this._type = type;
     this._isRest = isRest;
+    this._isOptional = isOptional;
   }
 
   asRestParam() {
@@ -210,12 +313,12 @@ class ParameterNode extends Node {
   }
 
   _toCode() {
-    return `${this._isRest ? '...' : ''}${this._name}: ${this._type}`;
+    return `${this._isRest ? '...' : ''}${this._name}${this._isOptional ? '?' : ''}: ${this._type}`;
   }
 }
 
 @factory
-class MethodNode extends Node {
+class MethodNode extends DecorableNode {
   constructor(name, params, type) {
     super();
 
@@ -293,6 +396,13 @@ class InterfaceMethodNode extends MethodNode {
   _toCode(ctx) {
     const prefix = this._static ? 'static ' : '';
 
+    if (this._optional) {
+      const params = this._params.map(toCode({ ...ctx, level: 0 })).join(', ');
+      const type = this._type !== null ? ` => ${this._type}` : '';
+
+      return `${prefix}${this.name || ''}: (${params})${type};`;
+    }
+    
     return `${prefix}${super._toCode(ctx)};`;
   }
 }
@@ -332,7 +442,7 @@ class InterfaceIndexerNode extends Node {
 }
 
 @factory
-class ClassNode extends Node {
+class ClassNode extends DecorableNode {
   constructor(name, superName, members) {
     super();
 
@@ -432,6 +542,10 @@ export function createExportDeclaration(decl) {
   return ExportNamedDeclarationNode(decl);
 }
 
+export function createImportDeclaration(decl) {
+  return ImportDeclarationNode(decl);
+}
+
 export function createVariableDeclaration(kind, decs) {
   return VariableDeclarationNode(kind, decs);
 }
@@ -448,8 +562,24 @@ export function createExport(specifiers, source) {
   return ExportNode(specifiers, source);
 }
 
-export function createParam(name, type, isRest = false) {
-  return ParameterNode(name, type, isRest);
+export function createImportSpecifier(imported, local) {
+  return ImportSpecifierNode(imported, local);
+}
+
+export function createImportDefaultSpecifier(imported, local) {
+  return ImportDefaultSpecifierNode(imported, local);
+}
+
+export function createImportNamespaceSpecifier(local) {
+  return ImportNamespaceSpecifierNode(local);
+}
+
+export function createImport(encloseSpecifiers, specifiers, source) {
+  return ImportNode(encloseSpecifiers, specifiers, source);
+}
+
+export function createParam(name, type, isRest = false, isOptional = false) {
+  return ParameterNode(name, type, isRest, isOptional);
 }
 
 export function createFunction(name, params, type) {
