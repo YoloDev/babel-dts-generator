@@ -447,7 +447,7 @@ class InterfaceIndexerNode extends Node {
 
 @factory
 class ClassNode extends DecorableNode {
-  constructor(name, superName, members, typeParameters, superTypeParameters) {
+  constructor(name, superName, members, typeParameters, superTypeParameters, impls) {
     super();
 
     this._name = name;
@@ -455,6 +455,7 @@ class ClassNode extends DecorableNode {
     this._members = members;
     this._typeParameters = typeParameters;
     this._superTypeParameters = superTypeParameters;
+    this._impls = impls;
   }
 
   _toCode(ctx) {
@@ -462,12 +463,30 @@ class ClassNode extends DecorableNode {
     const superTypeParameters = this._superTypeParameters !== null ? `<${this._superTypeParameters.join(', ')}>` : '';
     const superStr = this._super ? ` extends ${this._super}${superTypeParameters}` : '';
     const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
+    const impls = this._impls !== null ? ` implements ${this._impls.map(toCode({ ...ctx, level: 0 })).join(', ')}` : '';
 
-    return `class ${this._name}${typeParameters}${superStr} {\n${members}\n}`;
+    return `class ${this._name}${typeParameters}${superStr}${impls} {\n${members}\n}`;
   }
 
   get preventSemi() {
     return true;
+  }
+}
+
+@factory
+class ImplementsNode extends Node {
+  constructor(name, typeParameters) {
+    super();
+
+    this._name = name;
+    this._typeParameters = typeParameters;
+  }
+
+  _toCode(_ctx) {
+    const name = this._name;
+    const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
+
+    return `${name}${typeParameters}`;
   }
 }
 
@@ -614,8 +633,12 @@ export function createInterfaceCall(params, type) {
   return InterfaceCallNode(params, type);
 }
 
-export function createClass(name, superName, members, typeParameters, superTypeParameters) {
-  return ClassNode(name, superName, members, typeParameters, superTypeParameters);
+export function createClass(name, superName, members, typeParameters, superTypeParameters, impls) {
+  return ClassNode(name, superName, members, typeParameters, superTypeParameters, impls);
+}
+
+export function createImplements(name, typeParameters) {
+  return ImplementsNode(name, typeParameters);
 }
 
 export function createClassConstructor(params) {

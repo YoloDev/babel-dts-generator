@@ -18,6 +18,7 @@ import {
   createInterfaceIndexer,
   createInterfaceCall,
   createClass,
+  createImplements,
   createClassConstructor,
   createClassMethod,
   createClassProperty } from './ast';
@@ -300,7 +301,7 @@ const generators = {
 
   ClassDeclaration(node, ctx) {
     const { shouldExcludeMember, ignoreEmptyClasses } = ctx;
-    const { id: { name }, superClass, body, typeParameters: tp, superTypeParameters: stp } = node;
+    const { id: { name }, superClass, body, typeParameters: tp, superTypeParameters: stp, implements: impl } = node;
     if (shouldExcludeMember(name)) {
       return null;
     }
@@ -315,12 +316,20 @@ const generators = {
     const members = body.body.map(generate).filter(id);
     const typeParameters = getTypeParameters(tp);
     const superTypeParameters = getTypeParameters(stp);
+    const impls = impl ? impl.map(generate) : null;
 
     if (members.length === 0 && ignoreEmptyClasses) {
       return null;
     }
 
-    return createClass(name, superName, members, typeParameters, superTypeParameters).fromSource(node);
+    return createClass(name, superName, members, typeParameters, superTypeParameters, impls).fromSource(node);
+  },
+
+  ClassImplements(node, _ctx) {
+    const { id: { name }, typeParameters: tp } = node;
+    const typeParameters = getTypeParameters(tp);
+
+    return createImplements(name, typeParameters).fromSource(node);
   },
 
   ClassMethod(node, ctx) {
@@ -516,6 +525,10 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
     case 'ArrayTypeAnnotation':
       const elementType = getTypeAnnotationString(annotation.elementType);
       return `${elementType}[]`;
+
+    case 'TupleTypeAnnotation':
+      const elements = annotation.types.map(getTypeAnnotationString).join(', ');
+      return `[${elements}]`;
 
     default: throw new Error(`Unsupported type annotation type: ${annotation.type}`);
   }
