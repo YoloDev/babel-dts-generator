@@ -12,7 +12,7 @@ class Node {
   }
 
   toCode(ctx) {
-    let { includeComment = true, includeCode = true } = ctx;
+    const { includeComment = true, includeCode = true } = ctx;
     const output = `${includeComment ? this._getCommentString(ctx) : ''}${includeCode ? this._toCode(ctx) : ''}`;
 
     return output
@@ -66,7 +66,7 @@ class DecorableNode extends Node {
     this._leadingComments = node.leadingComments || decoLeadingComments || null;
 
     return this;
-  }  
+  }
 }
 
 @factory
@@ -121,7 +121,7 @@ class ImportDeclarationNode extends Node {
     this._source = decl.source.value;
   }
 
-  _toCode(ctx) {
+  _toCode(_ctx) {
     const source = this._source;
     return `import '${source}';`;
   }
@@ -278,14 +278,14 @@ class ImportNode extends Node {
       }
 
       return `import {\n${specifiers}\n};`;
-    } else {
-      specifiers = this._specifiers.map(toCode({ ...ctx, level: 0 })).join(',\n');
-      if (this._source) {
-        return `import ${specifiers} from '${this._source}';`;
-      }
-
-      return `import ${specifiers};`;
     }
+
+    specifiers = this._specifiers.map(toCode({ ...ctx, level: 0 })).join(',\n');
+    if (this._source) {
+      return `import ${specifiers} from '${this._source}';`;
+    }
+
+    return `import ${specifiers};`;
   }
 }
 
@@ -319,12 +319,13 @@ class ParameterNode extends Node {
 
 @factory
 class MethodNode extends DecorableNode {
-  constructor(name, params, type) {
+  constructor(name, params, type, typeParameters) {
     super();
 
     this._name = name;
     this._params = params;
     this._type = type;
+    this._typeParameters = typeParameters;
   }
 
   get name() {
@@ -334,15 +335,16 @@ class MethodNode extends DecorableNode {
   _toCode(ctx) {
     const params = this._params.map(toCode({ ...ctx, level: 0 })).join(', ');
     const type = this._type !== null ? `: ${this._type}` : '';
+    const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
 
-    return `${this.name || ''}(${params})${type}`;
+    return `${this.name || ''}${typeParameters}(${params})${type}`;
   }
 }
 
 @factory
 class FunctionNode extends MethodNode {
-  constructor(name, params, type) {
-    super(name, params, type);
+  constructor(name, params, type, typeParameters) {
+    super(name, params, type, typeParameters);
   }
 
   _toCode(ctx) {
@@ -352,27 +354,29 @@ class FunctionNode extends MethodNode {
 
 @factory
 class InterfaceNode extends Node {
-  constructor(name, members, baseInterfaces) {
+  constructor(name, members, baseInterfaces, typeParameters) {
     super();
 
     this._name = name;
     this._members = members;
     this._baseInterfaces = baseInterfaces;
+    this._typeParameters = typeParameters;
   }
 
   _toCode(ctx) {
     const members = this._members.map(toCode({ ...ctx, level: 1 })).join('\n');
     const baseInterfaces = this._baseInterfaces.map(toCode({ ...ctx, level: 0 })).join(', ');
     const extendsStr = baseInterfaces.length === 0 ? '' : ` extends ${baseInterfaces}`;
+    const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
 
-    return `export interface ${this._name}${extendsStr} {\n${members}\n}`;
+    return `export interface ${this._name}${typeParameters}${extendsStr} {\n${members}\n}`;
   }
 }
 
 @factory
 class InterfaceCallNode extends MethodNode {
   constructor(params, type) {
-    super(null, params, type);
+    super(null, params, type, null);
   }
 
   _toCode(ctx) {
@@ -382,8 +386,8 @@ class InterfaceCallNode extends MethodNode {
 
 @factory
 class InterfaceMethodNode extends MethodNode {
-  constructor(name, params, type, isStatic, isOptional) {
-    super(name, params, type);
+  constructor(name, params, type, typeParameters, isStatic, isOptional) {
+    super(name, params, type, typeParameters);
 
     this._static = isStatic;
     this._optional = isOptional;
@@ -402,7 +406,7 @@ class InterfaceMethodNode extends MethodNode {
 
       return `${prefix}${this.name || ''}: (${params})${type};`;
     }
-    
+
     return `${prefix}${super._toCode(ctx)};`;
   }
 }
@@ -443,19 +447,25 @@ class InterfaceIndexerNode extends Node {
 
 @factory
 class ClassNode extends DecorableNode {
-  constructor(name, superName, members) {
+  constructor(name, superName, members, typeParameters, superTypeParameters, impls) {
     super();
 
     this._name = name;
     this._super = superName;
     this._members = members;
+    this._typeParameters = typeParameters;
+    this._superTypeParameters = superTypeParameters;
+    this._impls = impls;
   }
 
   _toCode(ctx) {
     const members = this._members.map(toCode({ ...ctx, level: 1 })).join('\n');
-    const superStr = this._super ? ` extends ${this._super}` : '';
+    const superTypeParameters = this._superTypeParameters !== null ? `<${this._superTypeParameters.join(', ')}>` : '';
+    const superStr = this._super ? ` extends ${this._super}${superTypeParameters}` : '';
+    const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
+    const impls = this._impls !== null ? ` implements ${this._impls.map(toCode({ ...ctx, level: 0 })).join(', ')}` : '';
 
-    return `class ${this._name}${superStr} {\n${members}\n}`;
+    return `class ${this._name}${typeParameters}${superStr}${impls} {\n${members}\n}`;
   }
 
   get preventSemi() {
@@ -464,9 +474,26 @@ class ClassNode extends DecorableNode {
 }
 
 @factory
+class ImplementsNode extends Node {
+  constructor(name, typeParameters) {
+    super();
+
+    this._name = name;
+    this._typeParameters = typeParameters;
+  }
+
+  _toCode(_ctx) {
+    const name = this._name;
+    const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
+
+    return `${name}${typeParameters}`;
+  }
+}
+
+@factory
 class ClassMethodNode extends MethodNode {
-  constructor(name, params, type, isStatic) {
-    super(name, params, type);
+  constructor(name, params, type, typeParameters, isStatic) {
+    super(name, params, type, typeParameters);
 
     this._static = isStatic;
   }
@@ -481,7 +508,7 @@ class ClassMethodNode extends MethodNode {
 @factory
 class ClassConstructorNode extends ClassMethodNode {
   constructor(params) {
-    super('constructor', params, null);
+    super('constructor', params, null, null);
   }
 }
 
@@ -582,16 +609,16 @@ export function createParam(name, type, isRest = false, isOptional = false) {
   return ParameterNode(name, type, isRest, isOptional);
 }
 
-export function createFunction(name, params, type) {
-  return FunctionNode(name, params, type);
+export function createFunction(name, params, type, typeParameters) {
+  return FunctionNode(name, params, type, typeParameters);
 }
 
-export function createInterface(name, members, baseInterfaces) {
-  return InterfaceNode(name, members, baseInterfaces);
+export function createInterface(name, members, baseInterfaces, typeParameters) {
+  return InterfaceNode(name, members, baseInterfaces, typeParameters);
 }
 
-export function createInterfaceMethod(name, params, type, isStatic, isOptional) {
-  return InterfaceMethodNode(name, params, type, isStatic, isOptional);
+export function createInterfaceMethod(name, params, type, typeParameters, isStatic, isOptional) {
+  return InterfaceMethodNode(name, params, type, typeParameters, isStatic, isOptional);
 }
 
 export function createInterfaceProperty(name, type, isStatic, isOptional) {
@@ -606,16 +633,20 @@ export function createInterfaceCall(params, type) {
   return InterfaceCallNode(params, type);
 }
 
-export function createClass(name, superName, members) {
-  return ClassNode(name, superName, members);
+export function createClass(name, superName, members, typeParameters, superTypeParameters, impls) {
+  return ClassNode(name, superName, members, typeParameters, superTypeParameters, impls);
+}
+
+export function createImplements(name, typeParameters) {
+  return ImplementsNode(name, typeParameters);
 }
 
 export function createClassConstructor(params) {
   return ClassConstructorNode(params);
 }
 
-export function createClassMethod(name, params, type, isStatic) {
-  return ClassMethodNode(name, params, type, isStatic);
+export function createClassMethod(name, params, type, typeParameters, isStatic) {
+  return ClassMethodNode(name, params, type, typeParameters, isStatic);
 }
 
 export function createClassProperty(name, type, isStatic) {

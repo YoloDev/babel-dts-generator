@@ -18,6 +18,7 @@ import {
   createInterfaceIndexer,
   createInterfaceCall,
   createClass,
+  createImplements,
   createClassConstructor,
   createClassMethod,
   createClassProperty } from './ast';
@@ -75,18 +76,18 @@ const generators = {
     console.warn('Unknown export named declaration format');
     return null;
   },
-  
+
   ImportDeclaration(node, { generate }) {
     if (node.specifiers) {
       const importSpecifiers = node.specifiers.filter(s => s.type === 'ImportSpecifier').map(generate);
 
       if (importSpecifiers.length === 0) {
         const importOtherSpecifiers = node.specifiers.filter(s => s.type !== 'ImportSpecifier').map(generate);
-        
+
         if (importOtherSpecifiers.length === 0) {
           return createImportDeclaration(node).fromSource(node);
         }
-        
+
         // for this case, the specifiers should not be enclosed in {}
         //   import q from 'bat';
         //   import * as foons from 'bun';
@@ -99,10 +100,10 @@ const generators = {
       //   import {default as q2} from 'bat';
       return createImport(true, importSpecifiers, node.source.value).fromSource(node);
     }
-    
+
     return createImportDeclaration(node).fromSource(node);
   },
-  
+
   ImportSpecifier(node) {
     const local = node.local.name;
     const imported = node.imported.name;
@@ -118,7 +119,7 @@ const generators = {
 
   ImportNamespaceSpecifier(node) {
     const local = node.local.name;
- 
+
     return createImportNamespaceSpecifier(local).fromSource(node);
   },
 
@@ -158,7 +159,7 @@ const generators = {
 
   FunctionDeclaration(node, ctx) {
     const { shouldExcludeMember } = ctx;
-    const { id: { name }, returnType, params: p } = node;
+    const { id: { name }, returnType, params: p, typeParameters: tp } = node;
     if (shouldExcludeMember(name)) {
       return null;
     }
@@ -172,7 +173,8 @@ const generators = {
     }
 
     const type = getTypeAnnotation(returnType, 'any');
-    return createFunction(name, params, type).fromSource(node);
+    const typeParameters = getTypeParameters(tp);
+    return createFunction(name, params, type, typeParameters).fromSource(node);
   },
 
   Identifier(node, { state }) {
@@ -210,8 +212,9 @@ const generators = {
 
   InterfaceDeclaration(node, ctx) {
     const { ignoreEmptyInterfaces } = ctx;
-    const { id: { name }, body: { indexers, properties, callProperties }, extends: e } = node;
+    const { id: { name }, body: { indexers, properties, callProperties }, extends: e, typeParameters: tp } = node;
     const baseInterfaces = e.map(({ id: { name } }) => name);
+    const typeParameters = getTypeParameters(tp);
     const members = [];
 
     const generate = generateNode({ ...ctx, state: INTERFACE });
@@ -241,7 +244,7 @@ const generators = {
       return null;
     }
 
-    return createInterface(name, members, baseInterfaces).fromSource(node);
+    return createInterface(name, members, baseInterfaces, typeParameters).fromSource(node);
   },
 
   ObjectTypeProperty(node, ctx) {
@@ -253,7 +256,7 @@ const generators = {
     }
 
     if (value.type === 'FunctionTypeAnnotation') {
-      const { params: p, returnType, rest } = value;
+      const { params: p, returnType, rest, typeParameters: tp } = value;
       // There is no way to differeantiate foo: () => void; and
       // foo(): void in interfaces in the babel AST (at least that
       // I've found). Thus these are treated as methods.
@@ -263,7 +266,8 @@ const generators = {
       }
 
       const type = getTypeAnnotationString(returnType, 'any');
-      return createInterfaceMethod(name, params, type, isStatic || false, optional).fromSource(node);
+      const typeParameters = getTypeParameters(tp);
+      return createInterfaceMethod(name, params, type, typeParameters, isStatic || false, optional).fromSource(node);
     }
 
     const type = getTypeAnnotationString(value, 'any');
@@ -297,7 +301,7 @@ const generators = {
 
   ClassDeclaration(node, ctx) {
     const { shouldExcludeMember, ignoreEmptyClasses } = ctx;
-    const { id: { name }, superClass, body } = node;
+    const { id: { name }, superClass, body, typeParameters: tp, superTypeParameters: stp, implements: impl } = node;
     if (shouldExcludeMember(name)) {
       return null;
     }
@@ -310,17 +314,27 @@ const generators = {
     const generate = generateNode({ ...ctx, state: CLASS });
     const superName = superClass ? superClass.name : null;
     const members = body.body.map(generate).filter(id);
+    const typeParameters = getTypeParameters(tp);
+    const superTypeParameters = getTypeParameters(stp);
+    const impls = impl ? impl.map(generate) : null;
 
     if (members.length === 0 && ignoreEmptyClasses) {
       return null;
     }
 
-    return createClass(name, superName, members).fromSource(node);
+    return createClass(name, superName, members, typeParameters, superTypeParameters, impls).fromSource(node);
+  },
+
+  ClassImplements(node, _ctx) {
+    const { id: { name }, typeParameters: tp } = node;
+    const typeParameters = getTypeParameters(tp);
+
+    return createImplements(name, typeParameters).fromSource(node);
   },
 
   ClassMethod(node, ctx) {
     const { shouldExcludeMember } = ctx;
-    const { kind, computed, returnType, params: p, static: isStatic, key: n } = node;
+    const { kind, computed, returnType, params: p, typeParameters: tp, static: isStatic, key: n } = node;
 
     const params = p.map(generateNode({ ...ctx, state: FUNCTION }));
     if (params.some(a => a === null)) {
@@ -335,6 +349,7 @@ const generators = {
     }
 
     const type = getTypeAnnotation(returnType, 'any');
+    const typeParameters = getTypeParameters(tp);
     let name;
     switch (n.type) {
       case 'Identifier':
@@ -367,7 +382,7 @@ const generators = {
       return createClassProperty(name, type, isStatic).fromSource(node);
     }
 
-    return createClassMethod(name, params, type, isStatic).fromSource(node);
+    return createClassMethod(name, params, type, typeParameters, isStatic).fromSource(node);
   },
 
   ClassProperty(node) {
@@ -439,6 +454,28 @@ function getSource(node, root) {
   return value;
 }
 
+function getTypeParameters(typeParameters) {
+  if (!typeParameters) {
+    return null;
+  }
+
+  const { type, params } = typeParameters;
+  if (params.length === 0) {
+    return null;
+  }
+
+  switch (type) {
+    case 'TypeParameterDeclaration':
+      return params.map(id => id.name);
+
+    case 'TypeParameterInstantiation':
+      return params.map(n => getTypeAnnotationString(n, null));
+
+    default:
+      return null;
+  }
+}
+
 function getTypeAnnotation(annotated, defaultType = null) {
   if (!annotated) {
     return defaultType;
@@ -488,6 +525,10 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
     case 'ArrayTypeAnnotation':
       const elementType = getTypeAnnotationString(annotation.elementType);
       return `${elementType}[]`;
+
+    case 'TupleTypeAnnotation':
+      const elements = annotation.types.map(getTypeAnnotationString).join(', ');
+      return `[${elements}]`;
 
     default: throw new Error(`Unsupported type annotation type: ${annotation.type}`);
   }

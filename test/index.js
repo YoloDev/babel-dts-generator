@@ -91,7 +91,7 @@ function run(files, index, errors) {
                     part.removed ? 'red' : 'yellow';
                 /* eslint-enable no-nested-ternary, lines-around-comment */
 
-                console.error(clc[color](part.value.trim()));
+                console.error(clc[color](printify(part.value)));
               });
               console.error();
 
@@ -119,3 +119,7 @@ glob('spec/**/*.src.js').then(files => {
   console.error(e);
   process.exit(1); // eslint-disable-line
 });
+
+function printify(str) {
+  return str.replace(/[\n\r]/g, '').replace(/ /g, '·').replace(/\t/g, '—'); // eslint-disable-line no-invalid-this
+}
