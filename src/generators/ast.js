@@ -554,7 +554,7 @@ function emptyCtx() {
 }
 
 function toCode(ctx) {
-  return (node) => node.toCode(ctx);
+  return (node) => node.toCode({ ...ctx, includeComment: true, includeCode: true });
 }
 
 export function createModuleDeclaration(name, nodes) {
