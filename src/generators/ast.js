@@ -105,8 +105,8 @@ class ExportNamedDeclarationNode extends Node {
   }
 
   _toCode(ctx) {
-    const comment = this._declaration._getCommentString({ ...ctx });
-    const decl = this._declaration._toCode({ ...ctx });
+    const comment = this._declaration._getCommentString(ctx);
+    const decl = this._declaration._toCode(ctx);
     const suffix = this._declaration.preventSemi ? '' : ';';
 
     return `${comment}export ${decl}${suffix}`;
@@ -553,7 +553,7 @@ function emptyCtx() {
 }
 
 function toCode(ctx) {
-  return (node) => node.toCode({ ...ctx });
+  return (node) => node.toCode(ctx);
 }
 
 export function createModuleDeclaration(name, nodes) {
