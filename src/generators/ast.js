@@ -12,8 +12,7 @@ class Node {
   }
 
   toCode(ctx) {
-    const { includeComment = true, includeCode = true } = ctx;
-    const output = `${includeComment ? this._getCommentString(ctx) : ''}${includeCode ? this._toCode(ctx) : ''}`;
+    const output = `${this._getCommentString(ctx)}${this._toCode(ctx)}`;
 
     return output
       .split('\n')
@@ -106,8 +105,8 @@ class ExportNamedDeclarationNode extends Node {
   }
 
   _toCode(ctx) {
-    const comment = this._declaration.toCode({ ...ctx, level: 0, includeComment: true, includeCode: false });
-    const decl = this._declaration.toCode({ ...ctx, level: 0, includeComment: false, includeCode: true });
+    const comment = this._declaration._getCommentString({ ...ctx });
+    const decl = this._declaration._toCode({ ...ctx });
     const suffix = this._declaration.preventSemi ? '' : ';';
 
     return `${comment}export ${decl}${suffix}`;
@@ -554,7 +553,7 @@ function emptyCtx() {
 }
 
 function toCode(ctx) {
-  return (node) => node.toCode({ ...ctx, includeComment: true, includeCode: true });
+  return (node) => node.toCode({ ...ctx });
 }
 
 export function createModuleDeclaration(name, nodes) {
