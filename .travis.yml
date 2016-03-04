@@ -3,6 +3,8 @@ node_js:
 - node
 install:
 - npm install
+- npm link
+- npm link babel-dts-generator
 script:
 - npm test
 deploy:
