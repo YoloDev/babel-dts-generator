@@ -54,7 +54,7 @@ function run(files, index, errors) {
         //loose: 'all',
         plugins: [
           'syntax-flow',
-          ['./lib/index', {
+          ['babel-dts-generator', {
             packageName: 'spec',
             typings: '',
             suppressModulePath: true,
