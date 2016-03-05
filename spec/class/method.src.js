@@ -8,6 +8,10 @@ export class Foo {
   foo(): number {
 
   }
+  
+  bat(a?: number): number {
+    
+  }
 
   ['bar-baz']() {
 
