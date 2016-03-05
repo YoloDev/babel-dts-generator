@@ -545,5 +545,5 @@ function getFunctionTypeAnnotationParameterNode(node) {
   const { name: { name }, typeAnnotation, optional } = node;
   const type = getTypeAnnotationString(typeAnnotation, 'any');
 
-  return createParam(optional ? `${name}?` : name, type);
+  return createParam(name, type, false, optional);
 }

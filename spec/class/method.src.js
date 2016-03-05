@@ -9,7 +9,9 @@ export class Foo {
 
   }
   
-  bat(a?: number): number {}
+  bat(a?: number): number {
+    
+  }
 
   ['bar-baz']() {
 
