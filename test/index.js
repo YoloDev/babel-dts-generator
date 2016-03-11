@@ -58,7 +58,10 @@ function run(files, index, errors) {
             packageName: 'spec',
             typings: '',
             suppressModulePath: true,
-            suppressComments: false
+            suppressComments: false,
+            ignoreMembers: /^_.*/,
+            ignoreEmptyInterfaces: true,
+            ignoreEmptyClasses: false
           }],
           'transform-decorators-legacy'
         ]
