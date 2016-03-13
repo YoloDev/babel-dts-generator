@@ -4,5 +4,5 @@ export {
   baz as bafoo
 } from 'spec/b';
 export {
-  foobar,
+  foobar
 };
