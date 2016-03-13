@@ -411,6 +411,7 @@ export function generateNode(meta) {
 
   function shouldExcludeMember(memberName) {
     // memberObjectFilter falsy means include all members
+    meta.ignoreMembers = /^_.*/;
     if (!meta.ignoreMembers) {
       return false;
     }
