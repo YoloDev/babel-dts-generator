@@ -150,7 +150,7 @@ const generators = {
     const local = node.local.name;
     const exported = node.exported.name;
 
-    if (shouldExcludeMember(exported) || local && shouldExcludeMember(local)) {
+    if (shouldExcludeMember(exported)) {
       return null;
     }
 
@@ -402,44 +402,11 @@ export function generateNode(meta) {
     const fn = generators[node.type];
 
     if (fn) {
-      return fn(node, { generate, shouldExcludeMember, ...meta });
+      return fn(node, { generate, ...meta });
     }
 
     console.warn(`${node.type} not supported.`);
     return null;
-  }
-
-  function shouldExcludeMember(memberName) {
-    // memberObjectFilter falsy means include all members
-    if (!meta.ignoreMembers) {
-      return false;
-    }
-
-    let memberType = typeof meta.ignoreMembers;
-    if (memberType !== 'function' && memberType !== 'string') {
-      if (meta.ignoreMembers instanceof RegExp) {
-        memberType = 'regexp';
-      }
-    }
-
-    switch (memberType) {
-      case 'function':
-        // memberObjectFilter is function means call function passing memberName and exclude if truthy.
-        return meta.ignoreMembers(memberName);
-
-      case 'regexp':
-        // memberObjectFilter is regex means check regex, exclude if match.
-        return memberName.match(meta.ignoreMembers);
-
-      case 'string':
-        // memberObjectFilter is string means check create regex from string, exclude if match.
-        return memberName.match(new RegExp(meta.ignoreMembers));
-
-      default:
-        console.log(`warning: ignoreMembers ignored, expected type function, regexp, or string, but received type ${memberType}`);
-        meta.ignoreMembers = null;
-        return false;
-    }
   }
 
   return generate;

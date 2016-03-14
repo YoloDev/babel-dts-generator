@@ -18,7 +18,7 @@ function read(path) {
         return reject(err);
       }
 
-      resolve(result);
+      return resolve(result);
     });
   });
 }
@@ -59,7 +59,6 @@ function run(files, index, errors) {
             typings: '',
             suppressModulePath: true,
             suppressComments: false,
-            ignoreMembers: /^_.*/,
             ignoreEmptyInterfaces: true,
             ignoreEmptyClasses: false
           }],
@@ -108,9 +107,10 @@ function run(files, index, errors) {
         if (index === files.length - 1) {
           // Done
           process.exit(errors); // eslint-disable-line
-        } else {
-          return run(files, index + 1, errors);
+          return null;
         }
+
+        return run(files, index + 1, errors);
       });
     });
   });

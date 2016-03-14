@@ -6,7 +6,7 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'interface/callproperty';
+const name = 'export/export-suppress-underscore';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
 const result = transform(content, {
@@ -24,7 +24,7 @@ const result = transform(content, {
   //loose: 'all',
   plugins: [
     'syntax-flow',
-    ['./lib/index', {
+    ['babel-dts-generator', {
       packageName: 'spec',
       typings: '',
       suppressModulePath: true,
