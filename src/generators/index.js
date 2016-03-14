@@ -39,7 +39,9 @@ function createHelpers({ ignoreMembers }) {
 
       case 'string':
         // memberObjectFilter is string means check create regex from string, exclude if match.
-        const regex = new RegExp(ignoreMembers);
+        const match = (/^r\/(.*?)\/([gmi]*)$/).exec(ignoreMembers);
+        const regex = match ? new RegExp(match[1], match[2]) : new RegExp(ignoreMembers);
+        //console.log(`Using regex: ${regex}`);
         return memberName => memberName.match(regex);
 
       default:

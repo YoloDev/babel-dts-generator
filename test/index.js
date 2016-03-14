@@ -60,7 +60,8 @@ function run(files, index, errors) {
             suppressModulePath: true,
             suppressComments: false,
             ignoreEmptyInterfaces: true,
-            ignoreEmptyClasses: false
+            ignoreEmptyClasses: false,
+            ignoreMembers: 'r/^_.*/'
           }],
           'transform-decorators-legacy'
         ]

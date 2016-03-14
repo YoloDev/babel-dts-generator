@@ -29,7 +29,8 @@ const result = transform(content, {
       typings: '',
       suppressModulePath: true,
       suppressComments: false,
-      dryRun: true
+      dryRun: true,
+      ignoreMembers: 'r/^_.*/'
     }],
     'transform-decorators-legacy'
   ]
