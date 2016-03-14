@@ -1,1 +1,1 @@
-export function foo(bar?: string, bat?:boolean): boolean;
+export function foo(bar?: string, bat?: boolean): boolean;

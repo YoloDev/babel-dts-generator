@@ -196,7 +196,7 @@ const generators = {
     const { left: { name, typeAnnotation } } = node;
     const type = getTypeAnnotation(typeAnnotation, 'any');
 
-    return createParam(name, `${type}?`).fromSource(node);
+    return createParam(name, type, false, true).fromSource(node);
   },
 
   RestElement(node, { state }) {
