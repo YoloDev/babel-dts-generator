@@ -14,3 +14,13 @@ export function factory(cls) {
   Factory.prototype = Object.create(cls.prototype);
   return Factory;
 }
+
+export function findLastIndex(arr, test) {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (test(arr[i], i, arr)) {
+      return i;
+    }
+  }
+
+  return -1;
+}

@@ -172,7 +172,7 @@ const generators = {
       return null;
     }
 
-    const type = getTypeAnnotation(returnType, 'any');
+    const type = getTypeAnnotation(returnType);
     const typeParameters = getTypeParameters(tp);
     return createFunction(name, params, type, typeParameters).fromSource(node);
   },
@@ -183,9 +183,9 @@ const generators = {
     }
 
     const { name, typeAnnotation, optional } = node;
-    const type = getTypeAnnotation(typeAnnotation, 'any');
+    const type = getTypeAnnotation(typeAnnotation);
 
-    return createParam(name, type, false, optional).fromSource(node);
+    return createParam(name, type, { isOptional: optional }).fromSource(node);
   },
 
   AssignmentPattern(node, { state }) {
@@ -194,9 +194,9 @@ const generators = {
     }
 
     const { left: { name, typeAnnotation } } = node;
-    const type = getTypeAnnotation(typeAnnotation, 'any');
+    const type = getTypeAnnotation(typeAnnotation);
 
-    return createParam(name, `${type}?`).fromSource(node);
+    return createParam(name, type, { isOptional: true }).fromSource(node);
   },
 
   RestElement(node, { state }) {
@@ -205,9 +205,9 @@ const generators = {
     }
 
     const { argument: { name }, typeAnnotation } = node;
-    const type = getTypeAnnotation(typeAnnotation, 'any[]');
+    const type = getTypeAnnotation(typeAnnotation);
 
-    return createParam(name, type, true).fromSource(node);
+    return createParam(name, type, { isRest: true }).fromSource(node);
   },
 
   InterfaceDeclaration(node, ctx) {
@@ -265,20 +265,20 @@ const generators = {
         params.push(getFunctionTypeAnnotationParameterNode(rest).asRestParam());
       }
 
-      const type = getTypeAnnotationString(returnType, 'any');
+      const type = getTypeAnnotationString(returnType);
       const typeParameters = getTypeParameters(tp);
       return createInterfaceMethod(name, params, type, typeParameters, isStatic || false, optional).fromSource(node);
     }
 
-    const type = getTypeAnnotationString(value, 'any');
+    const type = getTypeAnnotationString(value);
     return createInterfaceProperty(name, type, isStatic || false, optional).fromSource(node);
   },
 
   ObjectTypeIndexer(node) {
     const { id: { name }, value, key } = node;
 
-    const type = getTypeAnnotationString(value, 'any');
-    const keyType = getTypeAnnotationString(key, 'any');
+    const type = getTypeAnnotationString(value);
+    const keyType = getTypeAnnotationString(key);
 
     return createInterfaceIndexer(name, keyType, type).fromSource(node);
   },
@@ -295,7 +295,7 @@ const generators = {
       params.push(getFunctionTypeAnnotationParameterNode(rest).asRestParam());
     }
 
-    const type = getTypeAnnotationString(returnType, 'any');
+    const type = getTypeAnnotationString(returnType);
     return createInterfaceCall(params, type).fromSource(node);
   },
 
@@ -348,7 +348,7 @@ const generators = {
       return createClassConstructor(params).fromSource(node);
     }
 
-    const type = getTypeAnnotation(returnType, 'any');
+    const type = getTypeAnnotation(returnType);
     const typeParameters = getTypeParameters(tp);
     let name;
     switch (n.type) {
@@ -388,7 +388,7 @@ const generators = {
   ClassProperty(node) {
     const { key: { name }, typeAnnotation, static: isStatic } = node;
 
-    const type = getTypeAnnotation(typeAnnotation, 'any');
+    const type = getTypeAnnotation(typeAnnotation);
     return createClassProperty(name, type, isStatic).fromSource(node);
   }
 };
@@ -476,6 +476,10 @@ function getTypeParameters(typeParameters) {
   }
 }
 
+/**
+ * @param  {any} annotated the node to get annotation from
+ * @param  {string} [defaultType=null] the default type to use if no annotation is found
+ */
 function getTypeAnnotation(annotated, defaultType = null) {
   if (!annotated) {
     return defaultType;
@@ -545,5 +549,5 @@ function getFunctionTypeAnnotationParameterNode(node) {
   const { name: { name }, typeAnnotation, optional } = node;
   const type = getTypeAnnotationString(typeAnnotation, 'any');
 
-  return createParam(name, type, false, optional);
+  return createParam(name, type, { isOptional: optional });
 }
