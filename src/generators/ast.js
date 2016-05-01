@@ -356,7 +356,7 @@ class MethodNode extends DecorableNode {
     const params = this._params.map((param, index) =>
       param._toCode({ ...childCtx, unspecifiedAsOptional: markUnspecifiedAsOptional && index > lastSpecified })
     ).join(', ');
-    //const params = this._params.map(toCode({ ...ctx, level: 0 })).join(', ');
+
     const type = this.type === null ? '' : `: ${this.type}`;
     const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
 
