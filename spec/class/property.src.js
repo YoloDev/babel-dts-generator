@@ -3,4 +3,5 @@ export class Foo {
   get bar(): number {
     return 10;
   }
+  baz;
 }

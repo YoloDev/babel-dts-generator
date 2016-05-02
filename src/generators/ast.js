@@ -568,7 +568,11 @@ class ClassPropertyNode extends Node {
   _toCode() {
     const prefix = this._static ? 'static ' : '';
 
-    return `${prefix}${this._name}: ${this._type};`;
+    return `${prefix}${this._name}: ${this.type};`;
+  }
+
+  get type() {
+    return this._type || 'any';
   }
 }
 
