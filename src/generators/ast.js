@@ -1,4 +1,4 @@
-import { id, factory } from './utils';
+import { id, factory, findLastIndex } from './utils';
 
 class Node {
   constructor() {
@@ -311,8 +311,26 @@ class ParameterNode extends Node {
     return false;
   }
 
-  _toCode() {
-    return `${this._isRest ? '...' : ''}${this._name}${this._isOptional ? '?' : ''}: ${this._type}`;
+  _toCode({ unspecifiedAsOptional = false }) {
+    const type = this.type;
+    const optional = unspecifiedAsOptional && this._type === null && !this._isRest || this._isOptional;
+    return `${this._isRest ? '...' : ''}${this._name}${optional ? '?' : ''}: ${type}`;
+  }
+
+  get type() {
+    if (this._type) {
+      return this._type;
+    }
+
+    if (this._isRest) {
+      return 'any[]';
+    }
+
+    return 'any';
+  }
+
+  get isSpecified() {
+    return this._type !== null;
   }
 }
 
@@ -332,11 +350,33 @@ class MethodNode extends DecorableNode {
   }
 
   _toCode(ctx) {
-    const params = this._params.map(toCode({ ...ctx, level: 0 })).join(', ');
-    const type = this._type !== null ? `: ${this._type}` : '';
+    const lastSpecified = findLastIndex(this._params, p => p.isSpecified);
+    const markUnspecifiedAsOptional = ctx.markUnspecifiedAsOptional;
+    const childCtx = { ...ctx, level: 0 };
+    const params = this._params.map((param, index) =>
+      param._toCode({ ...childCtx, unspecifiedAsOptional: markUnspecifiedAsOptional && index > lastSpecified })
+    ).join(', ');
+
+    const type = this.type === null ? '' : `: ${this.type}`;
     const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
 
     return `${this.name || ''}${typeParameters}(${params})${type}`;
+  }
+
+  get isConstructor() {
+    return false;
+  }
+
+  get type() {
+    if (this.isConstructor) {
+      return null;
+    }
+
+    if (this._type) {
+      return this._type;
+    }
+
+    return 'any';
   }
 }
 
@@ -509,6 +549,10 @@ class ClassConstructorNode extends ClassMethodNode {
   constructor(params) {
     super('constructor', params, null, null);
   }
+
+  get isConstructor() {
+    return true;
+  }
 }
 
 @factory
@@ -524,7 +568,11 @@ class ClassPropertyNode extends Node {
   _toCode() {
     const prefix = this._static ? 'static ' : '';
 
-    return `${prefix}${this._name}: ${this._type};`;
+    return `${prefix}${this._name}: ${this.type};`;
+  }
+
+  get type() {
+    return this._type || 'any';
   }
 }
 
@@ -604,7 +652,7 @@ export function createImport(encloseSpecifiers, specifiers, source) {
   return ImportNode(encloseSpecifiers, specifiers, source);
 }
 
-export function createParam(name, type, isRest = false, isOptional = false) {
+export function createParam(name, type, { isRest = false, isOptional = false } = {}) {
   return ParameterNode(name, type, isRest, isOptional);
 }
 

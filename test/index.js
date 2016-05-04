@@ -121,5 +121,9 @@ glob('spec/**/*.src.js').then(files => {
 });
 
 function printify(str) {
-  return str.replace(/[\n\r]/g, '').replace(/ /g, '·').replace(/\t/g, '—'); // eslint-disable-line no-invalid-this
+  return str
+    .replace(/[\n\r]/g, '\n')
+    .replace(/ /g, '·')
+    .replace(/\t/g, '—')
+    .trimRight();
 }
