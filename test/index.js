@@ -30,6 +30,7 @@ function normalize(str) {
 function run(files, index, errors) {
   const file = files[index];
   const expectedFile = file.replace('.src.js', '.expected.ts');
+  const suppressAmbientDeclaration = false;
   return exists(expectedFile).then(fileExists => {
     if (!fileExists) {
       console.error(`File ${expectedFile} does not exist.`);
@@ -58,7 +59,8 @@ function run(files, index, errors) {
             packageName: 'spec',
             typings: '',
             suppressModulePath: true,
-            suppressComments: false
+            suppressComments: false,
+            suppressAmbientDeclaration: suppressAmbientDeclaration
           }],
           'transform-decorators-legacy'
         ]
@@ -78,7 +80,11 @@ function run(files, index, errors) {
             actual = normalize(actual);
 
             expected = expected.trim();
-            actual = actual.split('\n').slice(1, -1).map(l => l.substring(2)/* remove leading whitespace */).join('\n').trim();
+            if (!suppressAmbientDeclaration) {
+              actual = actual.split('\n').slice(1, -1).map(l => l.substring(2)/* remove leading whitespace */).join('\n').trim();
+            } else {
+              actual = actual.replace(/export declare/g, 'export').trim();
+            }
 
             const diff = diffLines(expected, actual, { ignoreWhitespace: true });
             if (diff.length > 1 || diff[0].removed) {

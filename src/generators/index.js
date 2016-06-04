@@ -10,14 +10,15 @@ export function generate({
     root,
     suppressModulePath,
     suppressComments,
-    markUnspecifiedAsOptional
+    markUnspecifiedAsOptional,
+    suppressAmbientDeclaration
   }, fileMeta) {
   const nodes = moduleImports.concat(interfaces, moduleExports).filter(id);
 
   const module = createModuleDeclaration(suppressModulePath ? root : moduleId, nodes);
 
   fileMeta.dts = module;
-  return module.toString({ suppressComments, markUnspecifiedAsOptional });
+  return module.toString({ suppressComments, markUnspecifiedAsOptional, suppressAmbientDeclaration });
 }
 
 export function createNodeGenerator({ root }) {
