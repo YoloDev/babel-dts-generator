@@ -91,7 +91,7 @@ export function plugin({ types: t }) { // eslint-disable-line
         ignoreEmptyClasses = false,
         dryRun = false,
         markUnspecifiedAsOptional = true,
-        suppressAmbientDeclaration = true
+        suppressAmbientDeclaration = false
       } = opts;
 
       const moduleId = `${packageName}/${relative(moduleRoot, filename).replace('.js', '')}`;
