@@ -90,7 +90,8 @@ export function plugin({ types: t }) { // eslint-disable-line
         ignoreEmptyInterfaces = true,
         ignoreEmptyClasses = false,
         dryRun = false,
-        markUnspecifiedAsOptional = true
+        markUnspecifiedAsOptional = true,
+        suppressAmbientDeclaration = true
       } = opts;
 
       const moduleId = `${packageName}/${relative(moduleRoot, filename).replace('.js', '')}`;
@@ -108,6 +109,7 @@ export function plugin({ types: t }) { // eslint-disable-line
       meta.ignoreEmptyClasses = ignoreEmptyClasses;
       meta.dryRun = dryRun;
       meta.markUnspecifiedAsOptional = markUnspecifiedAsOptional;
+      meta.suppressAmbientDeclaration = suppressAmbientDeclaration;
       meta.nodeGenerator = createNodeGenerator(meta);
 
       file.metadata[symb] = meta;

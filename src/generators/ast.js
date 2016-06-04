@@ -78,8 +78,12 @@ class ModuleDeclarationNode extends Node {
   }
 
   _toCode(ctx) {
-    const code = this._children.map(toCode(ctx.indent())).join('\n');
-    return `declare module '${this._name}' {\n${code}\n}`;
+    const code = ctx.suppressAmbientDeclaration ?
+      this._children.map(toCode(ctx)).join('\n') :
+      this._children.map(toCode(ctx.indent())).join('\n');
+    return ctx.suppressAmbientDeclaration ?
+      code :
+      `declare module '${this._name}' {\n${code}\n}`;
   }
 }
 
@@ -91,8 +95,8 @@ class ExportAllFromNode extends Node {
     this._source = source;
   }
 
-  _toCode() {
-    return `export * from '${this._source}';`;
+  _toCode(ctx) {
+    return `export${ctx.suppressAmbientDeclaration ? ' declare' : ''} * from '${this._source}';`;
   }
 }
 
@@ -109,7 +113,7 @@ class ExportNamedDeclarationNode extends Node {
     const decl = this._declaration._toCode(ctx);
     const suffix = this._declaration.preventSemi ? '' : ';';
 
-    return `${comment}export ${decl}${suffix}`;
+    return `${comment}export${ctx.suppressAmbientDeclaration ? ' declare' : ''} ${decl}${suffix}`;
   }
 }
 
@@ -206,10 +210,10 @@ class ExportNode extends Node {
     const exported = this._exported.map(toCode({ ...ctx, level: 1 })).join(',\n');
 
     if (this._source) {
-      return `export {\n${exported}\n} from '${this._source}';`;
+      return `export${ctx.suppressAmbientDeclaration ? ' declare' : ''} {\n${exported}\n} from '${this._source}';`;
     }
 
-    return `export {\n${exported}\n};`;
+    return `export${ctx.suppressAmbientDeclaration ? ' declare' : ''} {\n${exported}\n};`;
   }
 }
 
@@ -407,8 +411,9 @@ class InterfaceNode extends Node {
     const baseInterfaces = this._baseInterfaces.map(toCode({ ...ctx, level: 0 })).join(', ');
     const extendsStr = baseInterfaces.length === 0 ? '' : ` extends ${baseInterfaces}`;
     const typeParameters = this._typeParameters !== null ? `<${this._typeParameters.join(', ')}>` : '';
+    const decl = ctx.suppressAmbientDeclaration ? ' declare' : '';
 
-    return `export interface ${this._name}${typeParameters}${extendsStr} {\n${members}\n}`;
+    return `export${decl} interface ${this._name}${typeParameters}${extendsStr} {\n${members}\n}`;
   }
 }
 
