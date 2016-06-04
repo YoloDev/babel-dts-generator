@@ -95,8 +95,8 @@ class ExportAllFromNode extends Node {
     this._source = source;
   }
 
-  _toCode(ctx) {
-    return `export${ctx.suppressAmbientDeclaration ? ' declare' : ''} * from '${this._source}';`;
+  _toCode() {
+    return `export * from '${this._source}';`;
   }
 }
 
