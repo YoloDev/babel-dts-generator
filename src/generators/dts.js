@@ -411,13 +411,14 @@ export function generateNode(meta) {
 
   function shouldExcludeMember(memberName) {
     // memberObjectFilter falsy means include all members
-    if (!meta.ignoreMembers) {
-      return false;
+    let ignoreMembers = '^_.*';
+    if (meta && meta.ignoreMembers) {
+      ignoreMembers = meta.ignoreMembers;
     }
 
-    let memberType = typeof meta.ignoreMembers;
+    let memberType = typeof ignoreMembers;
     if (memberType !== 'function' && memberType !== 'string') {
-      if (meta.ignoreMembers instanceof RegExp) {
+      if (ignoreMembers instanceof RegExp) {
         memberType = 'regexp';
       }
     }
@@ -425,19 +426,19 @@ export function generateNode(meta) {
     switch (memberType) {
       case 'function':
         // memberObjectFilter is function means call function passing memberName and exclude if truthy.
-        return meta.ignoreMembers(memberName);
+        return ignoreMembers(memberName);
 
       case 'regexp':
         // memberObjectFilter is regex means check regex, exclude if match.
-        return memberName.match(meta.ignoreMembers);
+        return memberName.match(ignoreMembers);
 
       case 'string':
         // memberObjectFilter is string means check create regex from string, exclude if match.
-        return memberName.match(new RegExp(meta.ignoreMembers));
+        return memberName.match(new RegExp(ignoreMembers));
 
       default:
         console.log(`warning: ignoreMembers ignored, expected type function, regexp, or string, but received type ${memberType}`);
-        meta.ignoreMembers = null;
+        ignoreMembers = null;
         return false;
     }
   }
