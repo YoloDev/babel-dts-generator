@@ -10,3 +10,11 @@ export const _constant: number = 3;
 
 export const _foo: string = 'foo',
   _bar: string = 'bar';
+
+export class _foofoo {
+
+}
+
+interface _foofootwo {
+
+}

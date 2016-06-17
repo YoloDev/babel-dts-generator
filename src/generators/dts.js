@@ -211,7 +211,7 @@ const generators = {
   },
 
   InterfaceDeclaration(node, ctx) {
-    const { ignoreEmptyInterfaces } = ctx;
+    const { ignoreEmptyInterfaces, shouldExcludeMember } = ctx;
     const { id: { name }, body: { indexers, properties, callProperties }, extends: e, typeParameters: tp } = node;
     const baseInterfaces = e.map(({ id: { name } }) => name);
     const typeParameters = getTypeParameters(tp);
@@ -238,6 +238,10 @@ const generators = {
       if (member !== null) {
         members.push(member);
       }
+    }
+
+    if (shouldExcludeMember(name)) {
+      return null;
     }
 
     if (ignoreEmptyInterfaces && baseInterfaces.length === 0 && members.length === 0) {
