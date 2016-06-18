@@ -58,6 +58,7 @@ function run(files, index, errors) {
           ['babel-dts-generator', {
             packageName: 'spec',
             typings: '',
+            ignoreMembers: '^_.*',
             suppressModulePath: true,
             suppressComments: false,
             suppressAmbientDeclaration: suppressAmbientDeclaration
