@@ -389,8 +389,12 @@ const generators = {
     return createClassMethod(name, params, type, typeParameters, isStatic).fromSource(node);
   },
 
-  ClassProperty(node) {
+  ClassProperty(node, ctx) {
     const { key: { name }, typeAnnotation, static: isStatic } = node;
+    const { shouldExcludeMember } = ctx;
+    if (shouldExcludeMember(name)) {
+      return null;
+    }
 
     const type = getTypeAnnotation(typeAnnotation);
     return createClassProperty(name, type, isStatic).fromSource(node);

@@ -15,6 +15,14 @@ export class _foofoo {
 
 }
 
+export class foobat {
+  _first = 0;
+  _third() {
+    return 7;
+  }
+  second = 0;
+}
+
 interface _foofootwo {
 
 }

@@ -6,3 +6,6 @@ export {
 export {
   foobar
 };
+export class foobat {
+  second: any;
+}
