@@ -543,6 +543,28 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
       const elements = annotation.types.map(getTypeAnnotationString).join(', ');
       return `[${elements}]`;
 
+    case 'ObjectTypeAnnotation':
+      const { properties, indexers } = annotation;
+      const annotations =
+        properties.map(({ key: { name }, value }) => {
+          const valueType = getTypeAnnotationString(value);
+
+          return `${name}: ${valueType}`;
+        }).concat(indexers.map(({ id: { name }, key, value }) => {
+          const keyType = getTypeAnnotationString(key);
+          const valueType = getTypeAnnotationString(value);
+
+          return `[${name}: ${keyType}]: ${valueType}`;
+        }));
+
+      if (annotations.length === 0) {
+        return '{}';
+      }
+
+      const annotationsString = annotations.join(', ');
+
+      return `{ ${annotationsString} }`;
+
     default: throw new Error(`Unsupported type annotation type: ${annotation.type}`);
   }
 }
