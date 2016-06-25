@@ -504,7 +504,7 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
 
   switch (annotation.type) {
     case 'GenericTypeAnnotation':
-      const { id: { name } } = annotation;
+      const name = getSimpleTypeAnnotationName(annotation.id);
       if (annotation.typeParameters) {
         const typeParameters = annotation.typeParameters.params.map(getTypeAnnotationString).join(', ');
         return `${name}<${typeParameters}>`;
@@ -566,6 +566,18 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
       return `{ ${annotationsString} }`;
 
     default: throw new Error(`Unsupported type annotation type: ${annotation.type}`);
+  }
+}
+
+function getSimpleTypeAnnotationName(identifier) {
+  switch (identifier.type) {
+    case 'Identifier': return identifier.name;
+    case 'QualifiedTypeIdentifier':
+      const { qualification, id } = identifier;
+      const qName = getSimpleTypeAnnotationName(qualification);
+      const idName = getSimpleTypeAnnotationName(id);
+      return `${qName}.${idName}`;
+    default: throw new Error(`Unsupported identifier type: ${identifier.type}`);
   }
 }
 
