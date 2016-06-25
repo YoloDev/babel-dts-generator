@@ -30,13 +30,13 @@ class Node {
     }
 
     const comments = this._leadingComments ?
-      this._leadingComments.map(s => {
+      this._leadingComments.filter(id).map(s => {
         switch (s.type) {
           case 'CommentLine':
-            return `//${s.value}`;
+            return `//${s.value}`.trim();
 
           case 'CommentBlock':
-            return `/*${s.value}*/`;
+            return `/*${s.value}*/`.trim();
 
           default:
             return null;
@@ -58,11 +58,13 @@ class Node {
 
 class DecorableNode extends Node {
   fromSource(node) {
-    let decoLeadingComments = null;
-    if (node.decorators && node.decorators.length > 0) {
-      decoLeadingComments = node.decorators[0].leadingComments;
+    let decoLeadingComments = [];
+    if (node.decorators) {
+      const all = node.decorators.map(n => n.leadingComments);
+      decoLeadingComments = [].concat(...all);
     }
-    this._leadingComments = node.leadingComments || decoLeadingComments || null;
+
+    this._leadingComments = decoLeadingComments.concat(node.leadingComments || []);
 
     return this;
   }

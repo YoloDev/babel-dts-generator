@@ -6,7 +6,7 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'parameters/unspecified';
+const name = 'class/class-with-comment-and-commented-decorator';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
 const result = transform(content, {
