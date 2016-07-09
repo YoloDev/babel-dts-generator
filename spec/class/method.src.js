@@ -13,6 +13,10 @@ export class Foo {
 
   }
 
+  self(): this {
+
+  }
+
   optional(param) {
 
   }
