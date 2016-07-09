@@ -530,6 +530,10 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
     case 'UnionTypeAnnotation':
       return annotation.types.map(getTypeAnnotationString).join(' | ');
 
+    case 'TypeofTypeAnnotation':
+      const argument = getTypeAnnotationString(annotation.argument);
+      return `typeof ${argument}`;
+
     case 'FunctionTypeAnnotation':
       const params = annotation.params.map(getFunctionTypeAnnotationParameter).join(', ');
       const returnType = getTypeAnnotationString(annotation.returnType);

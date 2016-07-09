@@ -6,4 +6,5 @@ export class Foo {
   'bar-baz'(): any;
   'foo-bar'(): any;
   [s](): any;
+  static alias(): typeof Foo;
 }
