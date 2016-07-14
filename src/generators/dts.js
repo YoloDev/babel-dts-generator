@@ -527,6 +527,9 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
     case 'BooleanTypeAnnotation':
       return 'boolean';
 
+    case 'ThisTypeAnnotation':
+      return 'this';
+
     case 'UnionTypeAnnotation':
       return annotation.types.map(getTypeAnnotationString).join(' | ');
 
