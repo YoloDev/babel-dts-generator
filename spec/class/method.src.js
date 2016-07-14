@@ -32,4 +32,8 @@ export class Foo {
   [s]() {
 
   }
+
+  static alias(): typeof Foo {
+
+  }
 }
