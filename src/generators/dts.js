@@ -23,6 +23,7 @@ import {
   createClassMethod,
   createClassProperty } from './ast';
 import { id } from './utils';
+import { safeString } from './string';
 
 const ROOT = 'root';
 const FUNCTION = 'func';
@@ -529,6 +530,10 @@ function getTypeAnnotationString(annotation, defaultType = 'any') {
 
     case 'ThisTypeAnnotation':
       return 'this';
+
+    case 'StringLiteralTypeAnnotation':
+      const type = safeString(annotation.value);
+      return `'${type}'`;
 
     case 'UnionTypeAnnotation':
       return annotation.types.map(getTypeAnnotationString).join(' | ');
