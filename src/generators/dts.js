@@ -11,6 +11,8 @@ import {
   createImportNamespaceSpecifier,
   createImport,
   createParam,
+  createObjectParam,
+  createObjectParamProp,
   createFunction,
   createInterface,
   createInterfaceMethod,
@@ -189,15 +191,45 @@ const generators = {
     return createParam(name, type, { isOptional: optional }).fromSource(node);
   },
 
-  AssignmentPattern(node, { state }) {
+  AssignmentPattern(node, ctx) {
+    const { state } = ctx;
     if (state !== FUNCTION) {
       return null;
     }
 
-    const { left: { name, typeAnnotation } } = node;
-    const type = getTypeAnnotation(typeAnnotation);
+    const left = generateNode(ctx)(node.left);
+    if (left !== null) {
+      return left.asOptional();
+    }
+    return null;
+  },
 
-    return createParam(name, type, { isOptional: true }).fromSource(node);
+  ObjectPattern(node, { state }) {
+    if (state !== FUNCTION) {
+      return null;
+    }
+
+    const props = node.properties.map(prop => {
+      const key = prop.key.name;
+      let value = null;
+      let isOptional = false;
+
+      if (prop.value.type === 'ObjectPattern') {
+        value = generators.ObjectPattern(prop.value, { state });
+      }
+
+      if (prop.value.type === 'AssignmentPattern') {
+        isOptional = true;
+        if (prop.value.left.type === 'ObjectPattern') {
+          value = generators.ObjectPattern(prop.value.left, { state });
+        }
+      }
+
+      return createObjectParamProp(key, value, isOptional).fromSource(prop);
+    });
+
+    const type = getTypeAnnotation(node.typeAnnotation);
+    return createObjectParam(props, type, false);
   },
 
   RestElement(node, { state }) {
