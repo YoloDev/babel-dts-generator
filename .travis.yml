@@ -2,11 +2,12 @@ language: node_js
 node_js:
 - node
 install:
-- npm install
-- npm link
-- npm link babel-dts-generator
+- npm install -g yarn
+- yarn
+- yarn link
+- yarn link babel-dts-generator
 script:
-- npm test
+- yarn run test
 deploy:
   provider: npm
   email: alxandr@alxandr.me
