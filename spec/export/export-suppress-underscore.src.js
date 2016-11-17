@@ -8,8 +8,8 @@ export var _variable: number = 1;
 export let _scoped: number = 2;
 export const _constant: number = 3;
 
-export const _foo: string = 'foo',
-  _bar: string = 'bar';
+export const _foo2: string = 'foo',
+  _bar2: string = 'bar';
 
 export class _foofoo {
 
