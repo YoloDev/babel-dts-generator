@@ -33,6 +33,9 @@ node_modules
 # Users Environment Variables
 .lock-wscript
 
+# VS Code
+.vscode/
+
 # =========================
 # Operating System Files
 # =========================
