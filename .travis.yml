@@ -8,6 +8,7 @@ install:
 - yarn link babel-dts-generator
 script:
 - yarn run test
+cache: yarn
 deploy:
   provider: npm
   email: alxandr@alxandr.me
