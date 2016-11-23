@@ -310,7 +310,15 @@ class ParameterNode extends Node {
       return this;
     }
 
-    return new ParameterNode(this._name, this._type, true);
+    return new ParameterNode(this._name, this._type, true, this._isOptional);
+  }
+
+  asOptional() {
+    if (this._isOptional) {
+      return this;
+    }
+
+    return new ParameterNode(this._name, this._type, this._isRest, true);
   }
 
   _includeComments() {
@@ -337,6 +345,111 @@ class ParameterNode extends Node {
 
   get isSpecified() {
     return this._type !== null;
+  }
+}
+
+@factory
+class ObjectParameterNode extends Node {
+  constructor(properties, type, isOptional) {
+    super();
+
+    this._props = properties;
+    this._type = type;
+    this._isOptional = isOptional;
+  }
+
+  asOptional() {
+    if (this._isOptional) {
+      return this;
+    }
+
+    return new ObjectParameterNode(this._props, this._type, true);
+  }
+
+  _toCode(ctx) {
+    if (this._props.length === 0) {
+      return '{}: {}';
+    }
+
+    const { unspecifiedAsOptional = false } = ctx;
+    const propStr = this.getIdent(ctx);
+    const type = this.getType(ctx);
+    const optional = unspecifiedAsOptional && this._type === null || this._isOptional;
+
+    return `${propStr}${optional ? '?' : ''}: ${type}`;
+  }
+
+  getIdent(ctx) {
+    if (this._props.length === 0) {
+      return '{}';
+    }
+
+    const props = this._props.map(prop =>
+      prop.toCode({ ...ctx, level: 0 })
+        .split('\n')
+        .map(indent({ ...ctx, level: 1 }))
+        .join('\n'))
+      .join(`,\n`);
+
+    return `{\n${props}\n}`;
+  }
+
+  getType(ctx) {
+    if (this._type) {
+      return this._type;
+    }
+
+    if (this._props.length === 0) {
+      return '{}';
+    }
+
+    const propTypes = this._props.map(prop =>
+      prop.getTypeString({ ...ctx, level: 0 })
+        .split('\n')
+        .map(indent({ ...ctx, level: 1 }))
+        .join('\n'))
+      .join(',\n');
+
+    return indent(ctx)(`{\n${propTypes}\n}`);
+  }
+
+  get isSpecified() {
+    return this._type !== null;
+  }
+}
+
+@factory
+class ObjectParameterPropertyNode extends Node {
+  constructor(key, value, isOptional) {
+    super();
+
+    this._key = key;
+    this._value = value;
+    this._isOptional = isOptional;
+  }
+
+  _toCode(ctx) {
+    const childCtx = { ...ctx, level: 0 };
+    const prop = this._value === null ? this._key : `${this.key}: ${this._value.getIdent(childCtx)}`;
+
+    return prop;
+  }
+
+  getTypeString(ctx) {
+    const { unspecifiedAsOptional = false } = ctx;
+    const prefix = unspecifiedAsOptional ? `${this.key}?` : this.key;
+
+    if (this._value === null) {
+      return `${prefix}: any`;
+    }
+
+    const childCtx = { ...ctx, level: 0 };
+    const valueStr = this._value.getType(childCtx);
+    return `${prefix}: ${valueStr}`;
+  }
+
+  get key() {
+    return this._key;
   }
 }
 
@@ -661,6 +774,14 @@ export function createImport(encloseSpecifiers, specifiers, source) {
 
 export function createParam(name, type, { isRest = false, isOptional = false } = {}) {
   return ParameterNode(name, type, isRest, isOptional);
+}
+
+export function createObjectParam(properties, type, isOptional) {
+  return ObjectParameterNode(properties, type, isOptional);
+}
+
+export function createObjectParamProp(key, value, isOptional) {
+  return ObjectParameterPropertyNode(key, value, isOptional);
 }
 
 export function createFunction(name, params, type, typeParameters) {

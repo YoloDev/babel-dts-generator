@@ -6,7 +6,7 @@ const path = require('path');
 const transform = require('babel-core').transform;
 const ts = require('typescript');
 
-const name = 'class/class-with-comment-and-commented-decorator';
+const name = 'parameters/objectparam/object-param';
 const content = fs.readFileSync(`${__dirname}/../spec/${name}.src.js`, 'utf-8');
 debugger;
 const result = transform(content, {
@@ -28,7 +28,8 @@ const result = transform(content, {
       packageName: 'spec',
       typings: '',
       suppressModulePath: true,
-      suppressComments: false
+      suppressComments: false,
+      dryRun: true
     }],
     'transform-decorators-legacy'
   ]
